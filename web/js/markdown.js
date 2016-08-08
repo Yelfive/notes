@@ -1,0 +1,238 @@
+/**
+ * Created by felix on 16/8/4.
+ */
+
+'use strict';
+
+var Helper = {
+    /**
+     * Iterate array or json object
+     * @param data
+     * @param callback
+     */
+    each: function (data, callback) {
+        if (!(callback instanceof Function)) {
+            console.error('callback should be the instance of Function');
+        }
+
+        for (var i in data) {
+            if (data.hasOwnProperty(i) && false === callback.apply(this, [i, data[i]])) {
+                break;
+            }
+        }
+    }
+};
+
+var ArrayHelper = {
+    get: function (haystack, needle) {
+        if (haystack && haystack.length) {
+            var offset = needle < 0 ? haystack.length + needle : needle;
+            return haystack[offset] === undefined ? arguments[2] : haystack[offset];
+        }
+
+        return arguments[2];
+    },
+    /**
+     * Check whether needle is in haystack
+     * @param {String} needle
+     * @param {String|Object} haystack
+     * @returns {boolean}
+     */
+    in: function (needle, haystack) {
+        var in_array = false;
+        this.each(haystack, function (k, v) {
+            in_array = needle == v;
+        });
+        return in_array;
+    },
+    merge: function () {
+        if (arguments.length === 0) {
+            return [];
+        }
+
+        var arr = arguments[0];
+        for (var i = 1; i < arguments.length; i++) {
+            Helper.each(arguments[i], function (k, v) {
+                arr.push(v);
+            });
+        }
+    }
+};
+var Html = {
+    classPrefix: 'fk-md-',
+    tag: function (tag, text, options) {
+        return '<' + tag + this.combine(options) + '>' + text + '</' + tag + '>';
+    },
+    singleTag: function (tag, options) {
+        return '<' + tag + this.combine(options) + '/>';
+    },
+    combine: function (data) {
+        if (!(data instanceof Object)) {
+            return '';
+        }
+        var arr = [];
+        // Set tag class with prefix
+        if (data.class && this.classPrefix && -1 == data.class.indexOf(this.classPrefix)) {
+            data.class = this.classPrefix + data.class;
+        }
+        Helper.each(data, function (k, v) {
+            arr.push(k + '="' + v + '"');
+        });
+        return ' ' + arr.join(' ');
+    }
+};
+
+
+function MarkupTypes(tag) {
+    this.start = '<' + tag + '>';
+    this.end = '</' + tag + '>';
+}
+
+
+var Types = {
+    pre: function () {
+    }
+};
+Types.pre.prototype = new MarkupTypes('pre');
+
+function Markup() {
+
+    const EOL = '\n';
+
+    /**
+     *
+     * Two ways:
+     * 1. RegExp.test -> callback -> to replace or to match
+     * 2. replace directly
+     * [replace, pattern, replacement],
+     *
+     * ====> [pattern, replacement, callback], default to be replace, and if the first element is string, then take as test
+     *
+     * [test, pattern, callback],
+     *
+     * @type {Array} Private
+     */
+    var rules = [
+        [/^(-{3,}|={3,})$/, function () {
+            runRestRules = false; // stop running rest of the rules
+
+            if (queue.length > 0) {
+                var lastLine = queue.pop();
+                var line = Html.tag(queue.length === 0 ? 'h1' : 'h2', lastLine, {'class': 'fk-md-title'});
+                queue.push(line);
+            }
+            return Html.singleTag('hr', {'class': 'line'});
+        }],
+        [/`([^`]+)`/g, Html.tag('code', '$1', {'class': 'code'})],
+        ['test', /^(?:\t| {4})+/, function () {
+            if (!(ArrayHelper.get(stack, -1) instanceof Types.pre)) {
+                stack.push(new Types.pre());
+                queue.push(new Types.pre());
+            }
+        }],
+        ['test', /(^\S)|(^$)/, function () {
+            if (ArrayHelper.get(stack, -1) instanceof Types.pre) {
+                stack.pop();
+                var pre = [];
+                var elem;
+
+                // console.log(arguments[0])
+                //
+                // console.log('----')
+                Helper.each(queue, function (k, v) {
+                    console.log(v)
+                })
+
+                while (true) {
+                    elem = queue.pop();
+                    if (elem instanceof MarkupTypes) {
+                        break;
+                    }
+                    pre.unshift(Html.tag('li', Html.tag('span', elem, {'class': 'line-wrapper'})));
+                }
+
+                queue.push('<pre class="' + Html.classPrefix + 'code-block">');
+                queue.push('<code>');
+                queue.push('<ol>');
+
+                ArrayHelper.merge(queue, pre);
+
+                queue.push('</ol>');
+                queue.push('</code>');
+                queue.push('</pre>');
+            }
+        }]
+    ];
+
+    var _source = '';
+
+    /**
+     * Stack of Html, each element represents one line
+     * @type {Array}
+     */
+    var queue = [];
+
+    /**
+     * Stack of operators
+     * @type {Array}
+     */
+    var stack = [];
+
+    /**
+     * Whether to run rest of the rules,
+     * this is the property changed within replace callbacks
+     * @type {Boolean}
+     */
+    var runRestRules;
+
+
+    function _tagWrapped(string) {
+        if (typeof  string !== 'string') {
+            throw new Error('Param must be string');
+        }
+        var noWrap = /^<.*>$/;
+        return noWrap.test(string);
+    }
+
+    function parse() {
+        var array = _source.split(EOL);
+
+        array = array.splice(0, 20); // splice 20 for test
+
+        Helper.each(array, function (i, line) {
+            runRestRules = true;
+            Helper.each(rules, function (j, rule) {
+                switch (rule[0]) {
+                    case 'test':
+                        if (rule[1].test(line) && rule[2]) {
+                            var _fd = rule[2](line);
+                            // if the result is not undefined, set it as the value of `line`
+                            _fd === undefined || (line = _fd);
+                        }
+                        break;
+                    default :
+                        line = line.replace(new RegExp(rule[0]), rule[1]);
+                }
+                return runRestRules;
+            });
+            queue.push(line);
+        });
+
+        Helper.each(queue, function (k, line) {
+            if (!_tagWrapped(line)) {
+                queue[k] = Html.tag('p', line);
+            }
+        });
+
+        return queue.join(EOL);
+    }
+
+    this.render = function (source) {
+        var t1 = (new Date).getTime();
+        _source = source;
+        var html = parse();
+        var t2 = (new Date).getTime();
+        console.info('Time elapsed:', t2 - t1, 'ms');
+        return html;
+    }
+}

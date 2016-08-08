@@ -1,0 +1,40 @@
+.fk-md-code {
+    border-radius: 3px;
+    background-color: #ff827d;
+    padding: 2px 4px;
+    color: white;
+}
+
+.fk-md-title {
+    padding: 10px 0 5px;
+    margin: 0;
+}
+
+.fk-md-line {
+    height: 1px;
+    border: none;
+    border-bottom: 1px solid #eaeaea;
+    margin: 2px 0 5px;
+}
+
+.fk-md-code-block {
+    background-color: #E9E9E9;
+    padding: 10px;
+    white-space: normal;
+}
+
+.fk-md-code-block ol {
+    color: #82da82;
+    margin: 0;
+    -webkit-padding-start: 20px;
+    -moz-padding-start: 20px;
+}
+
+.fk-md-code-block ol li {
+    border-left: 2px solid;
+    padding: 2px 10px;
+}
+
+.fk-md-code-block .fk-md-line-wrapper {
+    color: #000;
+}
