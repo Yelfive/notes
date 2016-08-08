@@ -83,17 +83,42 @@ var Html = {
 };
 
 
-function MarkupTypes(tag) {
-    this.start = '<' + tag + '>';
-    this.end = '</' + tag + '>';
+function MarkupTypes() {
+    this.start = [];
+    this.end = [];
+    this.setStart = function (tag) {
+        this.start.push('<' + tag + Html.combine(arguments[1]) + '>');
+    };
+    this.setEnd = function (tag) {
+        this.end.unshift('</' + tag + '>');
+    };
 }
 
 
-var Types = {
-    pre: function () {
-    }
-};
-Types.pre.prototype = new MarkupTypes('pre');
+var Types = {};
+
+Helper.each({
+    'pre': [['pre', {class: Html.classPrefix + 'pre'}], ['code', {'class': Html.classPrefix + 'code'}], 'ol'],
+    'list': ['ul']
+}, function (k, v) {
+    var mt = new MarkupTypes();
+    Helper.each(v, function (kk, vv) {
+        if (vv instanceof Array) {
+            mt.setStart(vv[0], vv[1]);
+            mt.setEnd(vv[0]);
+        } else {
+            mt.setStart(vv);
+            mt.setEnd(vv);
+        }
+        // todo: why the following code result in exception
+        // mt.setStart.apply(MarkupTypes, vv);
+        // mt.setEnd(vv instanceof Array ? vv[0] : vv);
+    });
+
+    Types[k] = function () {
+    };
+    Types[k].prototype = mt;
+});
 
 function Markup() {
 
@@ -126,40 +151,46 @@ function Markup() {
         [/`([^`]+)`/g, Html.tag('code', '$1', {'class': 'code'})],
         ['test', /^(?:\t| {4})+/, function () {
             if (!(ArrayHelper.get(stack, -1) instanceof Types.pre)) {
-                stack.push(new Types.pre());
-                queue.push(new Types.pre());
+                _mark('pre');
             }
         }],
+        [/^(?:\+|-) +/, function () {
+            if (!(ArrayHelper.get(stack, -1) instanceof Types.list)) {
+                // console.log(stack);
+                _mark('list');
+            }
+            return '';
+        }],
         ['test', /(^\S)|(^$)/, function () {
-            if (ArrayHelper.get(stack, -1) instanceof Types.pre) {
-                stack.pop();
-                var pre = [];
-                var elem;
-
-                // console.log(arguments[0])
-                //
-                // console.log('----')
-                Helper.each(queue, function (k, v) {
-                    console.log(v)
-                })
-
-                while (true) {
+            var last = ArrayHelper.get(stack, -1);
+            var wrapContent = [];
+            var elem;
+            // console.log(last);
+            if (last instanceof Types.pre) {
+                while (queue.length) {
                     elem = queue.pop();
                     if (elem instanceof MarkupTypes) {
                         break;
                     }
-                    pre.unshift(Html.tag('li', Html.tag('span', elem, {'class': 'line-wrapper'})));
+                    wrapContent.unshift(Html.tag('li', Html.tag('span', elem, {'class': 'line-wrapper'})));
                 }
 
-                queue.push('<pre class="' + Html.classPrefix + 'code-block">');
-                queue.push('<code>');
-                queue.push('<ol>');
+            } else if (last instanceof Types.list) {
+                console.log(last);
+                // while (queue.length) {
+                //     elem = queue.pop();
+                //     if (elem instanceof MarkupTypes) {
+                //         break;
+                //     }
+                //     wrapContent.unshift(Html.tag('li', elem));
+                // }
+            }
 
-                ArrayHelper.merge(queue, pre);
-
-                queue.push('</ol>');
-                queue.push('</code>');
-                queue.push('</pre>');
+            if (wrapContent.length) {
+                stack.pop();
+                ArrayHelper.merge(queue, elem.start);
+                ArrayHelper.merge(queue, wrapContent);
+                ArrayHelper.merge(queue, elem.end)
             }
         }]
     ];
@@ -185,6 +216,16 @@ function Markup() {
      */
     var runRestRules;
 
+    function _mark(typeName) {
+        var typeClass = Types[typeName];
+        if (typeClass) {
+            var type = new typeClass();
+            stack.push(type);
+            queue.push(type);
+        } else {
+            throw new Error('The type to be marked should be instance of MarkupTypes');
+        }
+    }
 
     function _tagWrapped(string) {
         if (typeof  string !== 'string') {
@@ -217,7 +258,10 @@ function Markup() {
             });
             queue.push(line);
         });
+    }
 
+    function translate() {
+        parse();
         Helper.each(queue, function (k, line) {
             if (!_tagWrapped(line)) {
                 queue[k] = Html.tag('p', line);
@@ -230,7 +274,7 @@ function Markup() {
     this.render = function (source) {
         var t1 = (new Date).getTime();
         _source = source;
-        var html = parse();
+        var html = translate();
         var t2 = (new Date).getTime();
         console.info('Time elapsed:', t2 - t1, 'ms');
         return html;
