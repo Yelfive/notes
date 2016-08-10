@@ -23,7 +23,7 @@
     margin: 0;
 }
 
-.fk-md-pre .fk-md-code {
+.block {
     display: block;
 }
 
@@ -39,4 +39,8 @@
 
 .fk-md-pre .fk-md-line-wrapper {
     color: #000;
+}
+
+.fk-md-ul {
+    padding-left: 1rem;
 }

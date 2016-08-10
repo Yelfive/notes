@@ -98,8 +98,8 @@ function MarkupTypes() {
 var Types = {};
 
 Helper.each({
-    'pre': [['pre', {class: Html.classPrefix + 'pre'}], ['code', {'class': Html.classPrefix + 'code'}], 'ol'],
-    'list': ['ul']
+    'codeBlock': [['pre', {class: Html.classPrefix + 'pre'}], ['code', {'class': Html.classPrefix + 'code block'}], 'ol'],
+    'list': [['ul', {class: Html.classPrefix + 'ul'}]]
 }, function (k, v) {
     var mt = new MarkupTypes();
     Helper.each(v, function (kk, vv) {
@@ -119,6 +119,12 @@ Helper.each({
     };
     Types[k].prototype = mt;
 });
+
+var is = {
+    list: function (string) {
+        return /^\+|\- /.test(string);
+    }
+};
 
 function Markup() {
 
@@ -148,51 +154,27 @@ function Markup() {
             }
             return Html.singleTag('hr', {'class': 'line'});
         }],
+        [/\*\*([^\*]+)\*\*/, Html.tag('b', '$1')],
         [/`([^`]+)`/g, Html.tag('code', '$1', {'class': 'code'})],
         ['test', /^(?:\t| {4})+/, function () {
-            if (!(ArrayHelper.get(stack, -1) instanceof Types.pre)) {
-                _mark('pre');
+            var tail = ArrayHelper.get(stack, -1);
+
+            if (!(tail instanceof Types.codeBlock)) {
+                if (tail instanceof MarkupTypes) {
+                    console.log(arguments)
+return 'hahaha';
+                } else {
+                    _mark('codeBlock');
+                }
             }
         }],
-        [/^(?:\+|-) +/, function () {
+        ['test', is.list, function () {
+            runRestRules = false;
             if (!(ArrayHelper.get(stack, -1) instanceof Types.list)) {
-                // console.log(stack);
                 _mark('list');
             }
-            return '';
         }],
-        ['test', /(^\S)|(^$)/, function () {
-            var last = ArrayHelper.get(stack, -1);
-            var wrapContent = [];
-            var elem;
-            // console.log(last);
-            if (last instanceof Types.pre) {
-                while (queue.length) {
-                    elem = queue.pop();
-                    if (elem instanceof MarkupTypes) {
-                        break;
-                    }
-                    wrapContent.unshift(Html.tag('li', Html.tag('span', elem, {'class': 'line-wrapper'})));
-                }
-
-            } else if (last instanceof Types.list) {
-                console.log(last);
-                // while (queue.length) {
-                //     elem = queue.pop();
-                //     if (elem instanceof MarkupTypes) {
-                //         break;
-                //     }
-                //     wrapContent.unshift(Html.tag('li', elem));
-                // }
-            }
-
-            if (wrapContent.length) {
-                stack.pop();
-                ArrayHelper.merge(queue, elem.start);
-                ArrayHelper.merge(queue, wrapContent);
-                ArrayHelper.merge(queue, elem.end)
-            }
-        }]
+        ['test', /(^\S)|(^$)/, _stackPop]
     ];
 
     var _source = '';
@@ -216,6 +198,71 @@ function Markup() {
      */
     var runRestRules;
 
+    /**
+     * Notice that the current line is inserted after the call,
+     * so the last member of the queue should be the line before current line
+     * @param currentLine
+     * @private
+     */
+    function _stackPop(currentLine) {
+        var tail = ArrayHelper.get(stack, -1);
+        if (!(tail instanceof MarkupTypes)) {
+            return;
+        }
+
+        var wrapContent = [], elem;
+
+        if (tail instanceof Types.codeBlock) {
+            while (queue.length) {
+                elem = queue.pop();
+                if (elem instanceof MarkupTypes) {
+                    break;
+                }
+                wrapContent.unshift(Html.tag('li', Html.tag('span', elem, {'class': 'line-wrapper'})));
+            }
+
+        } else if (tail instanceof Types.list) {
+            while (queue.length) {
+                elem = queue.pop();
+                if (elem instanceof MarkupTypes) {
+                    break;
+                }
+
+                /**
+                 * + the following is within the same <li>
+                 * + abc
+                 *   def
+                 *   ghi
+                 */
+                if (!is.list(elem)) {
+                    var group = [elem], e;
+                    var isList = false;
+                    while (queue.length) {
+                        e = queue.pop();
+                        isList = is.list(e);
+                        group.unshift(isList ? e.replace(/^\+|\- +/, '') : e);
+                        if (isList) {
+                            break;
+                        }
+                    }
+                    if (group.length > 1) {
+                        elem = Html.tag('pre', group.join(EOL), {class: 'pre'});
+                    }
+                } else {
+                    elem = elem.replace(/^\+|\- +/, '');
+                }
+
+                var line = Html.tag('li', elem);
+
+                wrapContent.unshift(line);
+            }
+        }
+
+        stack.pop();
+
+        ArrayHelper.merge(queue, elem.start, wrapContent, elem.end);
+    }
+
     function _mark(typeName) {
         var typeClass = Types[typeName];
         if (typeClass) {
@@ -231,21 +278,32 @@ function Markup() {
         if (typeof  string !== 'string') {
             throw new Error('Param must be string');
         }
+        // Strip all EOL, cause multi-line match result in unexpected
+        string = string.replace(EOL, '');
         var noWrap = /^<.*>$/;
+
         return noWrap.test(string);
     }
 
     function parse() {
         var array = _source.split(EOL);
 
-        array = array.splice(0, 20); // splice 20 for test
+        // array = array.splice(0, 19); // splice 20 for test
 
         Helper.each(array, function (i, line) {
             runRestRules = true;
             Helper.each(rules, function (j, rule) {
                 switch (rule[0]) {
                     case 'test':
-                        if (rule[1].test(line) && rule[2]) {
+                        var matched;
+                        if (rule[1] instanceof RegExp) {
+                            matched = rule[1].test(line);
+                        } else if (rule[1] instanceof Function) {
+                            matched = rule[1](line);
+                        } else {
+                            throw new Error('Invalid configure for rules, offset 1 of type "test" should be instance of RegExp or Function');
+                        }
+                        if (matched) {
                             var _fd = rule[2](line);
                             // if the result is not undefined, set it as the value of `line`
                             _fd === undefined || (line = _fd);
@@ -261,14 +319,29 @@ function Markup() {
     }
 
     function translate() {
-        parse();
-        Helper.each(queue, function (k, line) {
-            if (!_tagWrapped(line)) {
-                queue[k] = Html.tag('p', line);
+        try {
+            parse();
+            if (stack.length) {
+                while (stack.length) {
+                    _stackPop(ArrayHelper.get(queue, -1));
+                }
             }
-        });
+            Helper.each(queue, function (k, line) {
+                if (!_tagWrapped(line)) {
+                    queue[k] = Html.tag('p', line);
+                }
+            });
 
-        return queue.join(EOL);
+            return queue.join(EOL);
+        } catch (e) {
+            console.group('Queue before translate');
+            Helper.each(queue, function (k, line) {
+                console.log(line)
+            });
+            console.groupEnd();
+            throw e;
+        }
+
     }
 
     this.render = function (source) {
