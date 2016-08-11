@@ -10,6 +10,7 @@
             height: 100%;
             width: 100%;
             overflow: hidden;
+            font-size: 15px;
         }
 
         #source, #markdown {
@@ -23,7 +24,7 @@
 </head>
 <body>
 <pre id="source">
-<?= file_get_contents(__DIR__ . '/../../server/STANDARD.md'); ?>
+<?= preg_replace('/<([^a-z\/])/', '&lt;$1', file_get_contents(__DIR__ . '/../../server/STANDARD.md')); ?>
 </pre>
 <div id="markdown"></div>
 <script>

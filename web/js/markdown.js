@@ -97,6 +97,12 @@ function MarkupTypes() {
 
 var Types = {};
 
+/**
+ *  {
+ *      func1: [[tag, properties], [tag2, properties], [...]],
+ *      func2: [[tag, properties], [tag2, properties], [...]],
+ *  }
+ */
 Helper.each({
     'codeBlock': [['pre', {class: Html.classPrefix + 'pre'}], ['code', {'class': Html.classPrefix + 'code block'}], 'ol'],
     'list': [['ul', {class: Html.classPrefix + 'ul'}]]
@@ -116,13 +122,22 @@ Helper.each({
     });
 
     Types[k] = function () {
+        switch (k) {
+            case 'codeBlock':
+                if (!arguments[0]) {
+                    return;
+                }
+                var options = arguments[0];
+                this.spaceLength = options.spaceLength ? options.spaceLength : undefined;
+                break;
+        }
     };
     Types[k].prototype = mt;
 });
 
 var is = {
     list: function (string) {
-        return /^\+|\- /.test(string);
+        return /^\s*\+|\- /.test(string);
     }
 };
 
@@ -156,25 +171,29 @@ function Markup() {
         }],
         [/\*\*([^\*]+)\*\*/, Html.tag('b', '$1')],
         [/`([^`]+)`/g, Html.tag('code', '$1', {'class': 'code'})],
-        ['test', /^(?:\t| {4})+/, function () {
+        ['test', /^(?:\t| {4})+/, function (currentLine) {
             var tail = ArrayHelper.get(stack, -1);
 
             if (!(tail instanceof Types.codeBlock)) {
-                if (tail instanceof MarkupTypes) {
-                    console.log(arguments)
-return 'hahaha';
-                } else {
-                    _mark('codeBlock');
-                }
+                // if (tail instanceof MarkupTypes) {
+                //     // TODO: tab within other wrapper, list, for example, indent it
+                //     console.log(tail, arguments)
+                // } else {
+                    var match = currentLine.match(/^(\s+)\S/);
+
+                    _mark('codeBlock', {spaceLength: match && match[1] ? match[1].length : 0});
+                // }
             }
         }],
-        ['test', is.list, function () {
+        ['test', is.list, function (currentLine) {
             runRestRules = false;
             if (!(ArrayHelper.get(stack, -1) instanceof Types.list)) {
+                _stackPop(currentLine);
                 _mark('list');
             }
         }],
-        ['test', /(^\S)|(^$)/, _stackPop]
+        ['test', /^\S/, _stackPop]
+        // ['test', /(^\S)|(^$)/, _stackPop]
     ];
 
     var _source = '';
@@ -218,6 +237,8 @@ return 'hahaha';
                 if (elem instanceof MarkupTypes) {
                     break;
                 }
+                // todo space, indent with pre block
+                elem = elem.replace(new RegExp('^ {' + tail.spaceLength + '}'), '');
                 wrapContent.unshift(Html.tag('li', Html.tag('span', elem, {'class': 'line-wrapper'})));
             }
 
@@ -259,14 +280,13 @@ return 'hahaha';
         }
 
         stack.pop();
-
         ArrayHelper.merge(queue, elem.start, wrapContent, elem.end);
     }
 
     function _mark(typeName) {
         var typeClass = Types[typeName];
         if (typeClass) {
-            var type = new typeClass();
+            var type = new typeClass(arguments[1] ? arguments[1] : {});
             stack.push(type);
             queue.push(type);
         } else {
@@ -280,7 +300,7 @@ return 'hahaha';
         }
         // Strip all EOL, cause multi-line match result in unexpected
         string = string.replace(EOL, '');
-        var noWrap = /^<.*>$/;
+        var noWrap = /<.*>/;
 
         return noWrap.test(string);
     }
@@ -288,7 +308,7 @@ return 'hahaha';
     function parse() {
         var array = _source.split(EOL);
 
-        // array = array.splice(0, 19); // splice 20 for test
+        // array = array.splice(0, 21); // splice 20 for test
 
         Helper.each(array, function (i, line) {
             runRestRules = true;

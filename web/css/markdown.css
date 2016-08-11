@@ -1,8 +1,9 @@
 .fk-md-code {
     border-radius: 3px;
-    background-color: #E9E9E9;
+    background-color: #f7f7f9;
     padding: 2px 4px;
-    color: #000;
+    color: #bd4147;
+    font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
 }
 
 .fk-md-title {
@@ -25,6 +26,8 @@
 
 .block {
     display: block;
+    overflow: scroll;
+    width: 100%;
 }
 
 .fk-md-pre ol {
@@ -39,6 +42,7 @@
 
 .fk-md-pre .fk-md-line-wrapper {
     color: #000;
+    white-space: pre;
 }
 
 .fk-md-ul {
