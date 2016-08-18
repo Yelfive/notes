@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <title>Markdown</title>
-    <link rel="stylesheet" href="../css/markdown.css">
-    <script src="../js/markdown.js"></script>
+    <link rel="stylesheet" href="../css/markup.css">
+    <script src="../js/helper.js"></script>
+    <script src="../js/markup.js"></script>
     <style>
         html, body{
             height: 100%;
