@@ -19,7 +19,7 @@
             float: left;
             padding: 5px;
             overflow: auto;
-            height: 100%;
+            height: 95%;
         }
     </style>
 </head>
