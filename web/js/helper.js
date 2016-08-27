@@ -66,6 +66,9 @@ var ObjectHelper = {
             });
         }
 
+    },
+    instanceOf: function (object, className) {
+        return object instanceof className;
     }
 };
 
@@ -107,28 +110,11 @@ var ArrayHelper = {
 
 var HtmlHelper = {
     classPrefix: 'fk-md-',
-    asString: true,
     tag: function (tag, text, options) {
-        if (this.asString) {
-            return '<' + tag + this.combine(options) + '>' + text + '</' + tag + '>';
-        } else {
-            var elem = document.createElement(tag);
-            if (options.class) {
-                options.class = this.classPrefix + options.class;
-            }
-            ObjectHelper.each(options, function (name, value) {
-                elem[name] = value;
-            });
-            text && (elem.innerHTML = text);
-            return elem;
-        }
+        return '<' + tag + this.combine(options) + '>' + text + '</' + tag + '>';
     },
     singleTag: function (tag, options) {
-        if (this.asString) {
-            return '<' + tag + this.combine(options) + '/>';
-        } else {
-            return this.tag(tag, null, options);
-        }
+        return '<' + tag + this.combine(options) + '/>';
     },
     combine: function (data) {
         if (!(data instanceof Object)) {

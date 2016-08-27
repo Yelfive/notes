@@ -173,33 +173,73 @@
             ObjectHelper.each(_sourceLines, function (k, text) {
                 line = new Line(text);
                 line.isEmpty() || parseLine(line);
+                if (_queue.length) {
+                    _queue[k - 1].next = line;
+                    line.previous = _queue[k - 1];
+                }
                 _queue.push(line);
             });
 
+            var block = window.block;
             // todo block rules
-            // var stack = [];
-            // ObjectHelper.each(_queue, function (k, line) {
-            //     if (/^\s*$/.test(line.html)) {
-            //         stack.push(new Line('<br>'));
-            //     } else {
-            //         stack.push(line);
-            //     }
-            // });
-            // _queue = stack;
+            var stack = window.stack;
+            window._queue = _queue;
+            window.Line = Line;
+            window._checkRest = _checkRest;
 
+            ObjectHelper.each(_queue, function (lineNumber, line) {
+                _checkRest = false; // default not to check other rules
+                ObjectHelper.each(block, function (k, rule) {
+                    translateSingleRule(rule, line);
+                    return _checkRest;
+                });
+                line && stack.push(line);
+            });
+            _queue = stack;
+            console.log(_queue);
             afterParsed();
         }
 
         /**
          * Translate one single rule
-         * @param {RegExp} rule
+         * @param {[Array]} rule
          * @param {string} line
          * @returns {*}
          */
         function translateSingleRule(rule, line) {
-            translate[rule[0]](rule, line);
+            rule.length && translate[rule[0]](rule, line);
         }
 
+        /**
+         * Represents the block type of the line
+         * @param {string} name
+         * @constructor
+         */
+        function BaseType(name) {
+            this.name = name;
+        }
+
+        var Type = {
+            Raw: null, Title: null, Separator: null, Code: function (indentLength, state, start, end) {
+                this.indentLength = indentLength;
+                this.state = state;
+                this.start = start;
+                this.end = end;
+            }
+        };
+
+        Type.Code.STATE_START = 'start';
+        Type.Code.STATE_BODY = 'body';
+        Type.Code.STATE_END = 'end';
+        /**
+         * Declare parent class for types, using prototype
+         */
+        ObjectHelper.each(Type, function (k, v) {
+            if (v === null) Type[k] = function () {
+            };
+            Type[k].prototype = new BaseType(k);
+        });
+        window.Type = Type;
         /**
          *
          * @param line
@@ -209,14 +249,25 @@
         function Line(line) {
             this.origin = line;
             this.html = this.escape(line);
+            this.blockType = new Type.Raw();
+            this.previous = null;
+            this.next = null;
         }
 
-        Line.unescape = function (string) {
-            var line = new Line(string);
-            placeholder.escape.unescape(line);
-            return line.html;
-        };
+        /**
+         * Declare static function of Line
+         */
+        ObjectHelper.merge(Line, {
+            unescape: function (string) {
+                var line = new Line(string);
+                placeholder.escape.unescape(line);
+                return line.html;
+            }
+        });
 
+        /**
+         * Declare no-static function of Line
+         */
         ObjectHelper.merge(Line.prototype, {
             escape: function (string) {
                 ObjectHelper.each(placeholder.escape.map, function (k, v) {
@@ -259,6 +310,12 @@
         }
 
         var translate = {
+            /**
+             * @param {Array} rule
+             * - ['exec', RegExp, callback]
+             *
+             * @param {Line} line
+             */
             exec: function (rule, line) {
                 var matches = [], match;
                 var reg = new RegExp(rule[1], 'g');
@@ -269,10 +326,31 @@
                     rule[2](line, matches);
                 }
             },
+            /**
+             *
+             * @param {Array} rule
+             * - ['replace', RegExp, replacement]
+             * - ['replace', RegExp, replacement, afterReplaced]
+             *
+             * @param {Line} line
+             */
             replace: function (rule, line) {
-                line.html = line.html.replace(rule[1], rule[2]);
+                var replaced = line.html.replace(rule[1], rule[2]);
+                if (rule[3] && replaced !== line.html) {
+                    line.html = replaced;
+                    rule[3](line);
+                }
             },
+            /**
+             * @param {Array }rule
+             * - ['test', RegExp, callback]
+             *
+             * @param {Line} line
+             */
             test: function (rule, line) {
+                if (rule[1].test(line.html)) {
+                    rule[2](line);
+                }
             }
         };
 

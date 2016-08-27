@@ -5,6 +5,7 @@
     <title>Markdown</title>
     <link rel="stylesheet" href="../css/markup.css">
     <script src="../js/helper.js"></script>
+    <script src="../js/markup-block.js"></script>
     <script src="../js/markup.js"></script>
     <style>
         html, body{

@@ -1,28 +1,76 @@
-abc``code**St```rong**`` **strong**
+Block Elements
+==============
 
-`&nbsp;`
-*em*
+Paragraph
+---------
+Line ended with another empty line
+will be consider as a paragraph
 
-**strong**
+And with an extra empty line, this will be a new paragraph
+
+Code
+----
+If you want a code block, there are two ways to realize
+
+1. start with more than 4 spaces or 1 tag than this layer requires
+    
+        hello world
+        this is inside a code block
+1. start with more than three backtick and end with the same amount
+
+    ```php
+    
+    namespace a/b;
+    
+    class A extends B 
+    {
+        public function ImOverwritingB()
+        {
+            // something
+        }
+    }
+    
+    ```
+    
+Title
+-----
+
+# h1
+## h2
+### h3
+#### h4
+##### h5
+###### h6
+
+Sharp(#) stands for title element besides line ended with another line with only (-|=)
+
+or no-empty line with a line of (- or =) appended
+
+Separator Element
+-----------------
+---
+===
+More than three minus or equal signs 
+
+   This is a title
+------------------
+
+    This is however not a title, it's a code block and a single separator 
+-------------------------------------------------------------------------
+
+Title and separator are quiet similar,
+except for the former has a previous non-empty, no-formatted line
+and the later the opposite
+
+123
+---==
+
+===
 
 
-[Click Me](http://baidu.com) ![Image](http://image1.pengfu.cn/origin/160818/57b5218080471.gif)
+---
+sdfsdf
 
-
-[This is clickable image ![Image](http://image1.pengfu.cn/origin/160818/57b5218080471.gif)](http://image1.pengfu.cn/origin/160818/57b5218080471.gif)
-
-[![Image][image]][image]
-
-[This uses link placeholder][1]
-
-[Click ![Image\]][image]][1]
-
-[Link][-2\\]: http://inviting.myLord.cn1 ']
-
-[-2\]: http://inviting.myLord.cn ']: domain 'xxx''
-[-1]: http://inviting.myLord.cn ']: domain 'xxx''
-[0]: http://mylord.cn 'MyLord\''
-[1]: http://mylord.cn "MyLord"
-[2]: http://mylord.cn
-[3]: http://mylord.cn
-[image]: http://image1.pengfu.cn/origin/160818/57b5218080471.gif 'This\'s image'
+# 12
+   # 12
+    # 12
