@@ -8,7 +8,7 @@
     <script src="../js/markup-block.js"></script>
     <script src="../js/markup.js"></script>
     <style>
-        html, body{
+        html, body {
             height: 100%;
             width: 100%;
             overflow: hidden;

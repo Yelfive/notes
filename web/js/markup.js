@@ -188,7 +188,7 @@
             window._checkRest = _checkRest;
 
             ObjectHelper.each(_queue, function (lineNumber, line) {
-                _checkRest = false; // default not to check other rules
+                _checkRest = true; // default not to check other rules
                 ObjectHelper.each(block, function (k, rule) {
                     translateSingleRule(rule, line);
                     return _checkRest;
@@ -220,26 +220,52 @@
         }
 
         var Type = {
-            Raw: null, Title: null, Separator: null, Code: function (indentLength, state, start, end) {
+            Raw: function () {
+            },
+            Title: function () {
+            },
+            Separator: function () {
+            },
+            Quote: function () {
+
+            },
+            List: function (indentLength, state, start, end) {
+                this.indentLength = Type.SUB_INDENT_LENGTH;
+                this.start = start;
+                this.state = state;
+                this.end = end;
+            },
+            Code: function (indentLength, state, start, end) {
                 this.indentLength = indentLength;
                 this.state = state;
                 this.start = start;
                 this.end = end;
+                // this.toHtml = function () {
+                //
+                // }
             }
         };
 
-        Type.Code.STATE_START = 'start';
-        Type.Code.STATE_BODY = 'body';
-        Type.Code.STATE_END = 'end';
         /**
          * Declare parent class for types, using prototype
          */
-        ObjectHelper.each(Type, function (k, v) {
-            if (v === null) Type[k] = function () {
-            };
+        ObjectHelper.each(Type, function (k) {
             Type[k].prototype = new BaseType(k);
         });
+
+        Type.STATE_START = 'start';
+        Type.STATE_BODY = 'body';
+        Type.STATE_END = 'end';
+        Type.SUB_INDENT_LENGTH = 4;
+
+        // function Types() {
+        //     return [].apply(this, );
+        // }
+        //
+        // Types.
+
         window.Type = Type;
+
         /**
          *
          * @param line
