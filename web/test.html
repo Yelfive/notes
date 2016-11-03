@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title></title>
+    <script>
+        function setCaret() {
+            var el = document.getElementById("editable");
+            var range = document.createRange();
+            var sel = window.getSelection();
+            range.setStart(el.childNodes[2], 5);
+//            range.collapse(true);
+            sel.removeAllRanges();
+            sel.addRange(range);
+            el.focus();
+        }
+
+    </script>
+</head>
+<body>
+<div id="editable" contenteditable="true">
+    text text text<br>text text text<br>text text text<br>
+</div>
+<button id="button" onclick="setCaret()">focus</button>
+
+</body>
+</html>
