@@ -17,9 +17,9 @@
  * NOTE: this file must be saved in UTF-8 encoding.
  */
 return [
-    'Content' => '',
-    'Failed to create note' => '',
-    'Title' => '',
-    'Updated note successfully' => '',
+    'Content' => '内容',
+    'Failed to create note' => '添加笔记失败',
+    'Title' => '标题',
+    'Updated note successfully' => '更新成功',
     'Created successfully' => '添加成功',
 ];

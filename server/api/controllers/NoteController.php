@@ -4,6 +4,7 @@ namespace api\controllers;
 
 use api\components\Controller;
 use api\models\Note;
+use yii\data\ActiveDataProvider;
 
 /**
  * Site controller
@@ -11,13 +12,17 @@ use api\models\Note;
 class NoteController extends Controller
 {
 
-    /**
-     * Displays homepage.
-     *
-     * @return string
-     */
     public function actionIndex()
     {
+        $query = Note::find()->select(['id', 'title', 'created_at'])->orderBy('created_at DESC,id DESC');
+        $provider = new ActiveDataProvider([
+            'query' => $query,
+            'pagination' => [
+                'pageSize' => get('per_page', 30)
+            ]
+        ]);
+        $this->result->list = $provider;
+        $this->result->message = \Yii::t('note', 'Getting notes success fully');
     }
 
     public function actionCreate()
@@ -39,7 +44,7 @@ class NoteController extends Controller
         $model = Note::findOne(restful('id'));
         if (!$model) {
             $this->result->code = 404;
-            $this->result->message = \Yii::t('error', 'The resource you requested does not exist.');
+            $this->result->message = \Yii::t('error', 'Not Found');
             return;
         }
 
@@ -52,4 +57,17 @@ class NoteController extends Controller
             $this->result->message = $model->errorsToString();
         }
     }
+
+    public function actionView()
+    {
+        $model = Note::findOne(get('id'));
+        if ($model) {
+            $this->result->data = $model->attributes;
+            $this->result->message = \Yii::t('note', 'Succeeded in getting detail');
+        } else {
+            $this->result->code = 404;
+            $this->result->message = \Yii::t('error', 'Not Found');
+        }
+    }
+
 }

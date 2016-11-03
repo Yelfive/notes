@@ -43,7 +43,7 @@ class ErrorHandler extends \yii\web\ErrorHandler
                     'message' => Yii::t('error', 'Server Internal Error({type}).', ['type' => 'PHP']),
                 ];
             } else if ($data['code'] == 404) {
-                $data['message'] = Yii::t('error', 'Requested resource does not exists.');
+                $data['message'] = Yii::t('error', 'Requested resource does not exist.');
             }
 
             if (!isset($data['message'])) {
