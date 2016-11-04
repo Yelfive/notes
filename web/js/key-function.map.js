@@ -72,6 +72,7 @@ var KeyFunction = {
             success: function (fb) {
                 if (fb.code == 200) {
                     $id.val(fb.id);
+                    window.refreshList();
                 }
             }
         });

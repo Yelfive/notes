@@ -11,8 +11,8 @@ $(function () {
         if (key && callback instanceof Function) {
             /*
              * callback should return bool to suggest whether event runs default action
-             * - true: runs default
-             * - false: prevent default
+             * - true: perform the default
+             * - false: prevent the default
              */
             callback(e) || e.preventDefault();
         } else {
@@ -27,15 +27,18 @@ $(function () {
         }
     });
 
-    $.get('http://' + document.domain + '/api/index.php?r=note', function (fb) {
-        if (fb.code == 200) {
-            var html = '';
-            for (var p in fb.list) {
-                html += '<li data-key="' + fb.list[p].id + '"><span class="title">' + fb.list[p].title + '</span><span class="time">' + toDatetime(fb.list[p].created_at) + '</span></li>'
+     window.refreshList = function () {
+        $.get('http://' + document.domain + '/api/index.php?r=note', function (fb) {
+            if (fb.code == 200) {
+                var html = '';
+                for (var p in fb.list) {
+                    html += '<li data-key="' + fb.list[p].id + '"><span class="title">' + fb.list[p].title + '</span><span class="time">' + toDatetime(fb.list[p].created_at) + '</span></li>'
+                }
+                $('#list').html(html);
             }
-            $('#list').html(html);
-        }
-    });
+        });
+    };
+    window.refreshList();
 
     function toDatetime(stamp) {
         var d = new Date(stamp * 1000);
@@ -53,5 +56,9 @@ $(function () {
             }
         });
     });
+
+    window.onbeforeunload = function () {
+        return false;
+    }
 
 });

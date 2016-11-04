@@ -14,7 +14,7 @@ class NoteController extends Controller
 
     public function actionIndex()
     {
-        $query = Note::find()->select(['id', 'title', 'created_at'])->orderBy('created_at DESC,id DESC');
+        $query = Note::find()->select(['id', 'title', 'created_at'])->orderBy('updated_at DESC,id DESC');
         $provider = new ActiveDataProvider([
             'query' => $query,
             'pagination' => [

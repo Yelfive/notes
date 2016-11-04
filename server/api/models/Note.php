@@ -16,7 +16,7 @@ use api\components\ActiveRecord;
  * @property string $content
  *
  * @method static Note getModelById(int $id, boolean $createWhenNotFound = true) Return ActiveRecord of Note
- * @method static|null Note findOne(mixed $condition)
+ * @method static |null Note findOne(mixed $condition)
  */
 class Note extends ActiveRecord
 {
@@ -53,6 +53,18 @@ class Note extends ActiveRecord
             'updated_at' => Yii::t('base', 'Updated At'),
             'title' => Yii::t('note', 'Title'),
             'content' => Yii::t('note', 'Content'),
+        ];
+    }
+
+    public function behaviors()
+    {
+        return [
+            ['class' => '\yii\behaviors\TimestampBehavior'],
+            [
+                'class' => '\yii\behaviors\BlameableBehavior',
+                'updatedByAttribute' => false,
+                'value' => \Yii::$app->getUser()->getId() ?? 0,
+            ],
         ];
     }
 }
