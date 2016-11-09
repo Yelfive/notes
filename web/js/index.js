@@ -4,30 +4,35 @@
 
 $(function () {
     $('#content-box').keydown(function (e) {
-        // $('#content-box').keydown(function (e) {
         var key, callback, code = e.keyCode;
         key = CodeKey[code];
         callback = KeyFunction[key + 'Down'];
+        if (key) KeyFunction.keyDown(key);
         if (key && callback instanceof Function) {
             /*
              * callback should return bool to suggest whether event runs default action
              * - true: perform the default
              * - false: prevent the default
              */
-            callback(e) || e.preventDefault();
+            callback.apply(KeyFunction, [e]) || e.preventDefault();
         } else {
-            console.log(e.keyCode, e.key);
+            console.log('"' + e.keyCode + '":', '"' + e.key.replace(/^[a-z]/, function (v) {
+                    return v.toUpperCase()
+                }) + '"');
         }
+
     }).keyup(function (e) {
         var key, callback, code = e.keyCode;
         key = CodeKey[code];
         callback = KeyFunction[key + 'Up'];
+        // todo: optimism lDown = true stuff
+        if (key) KeyFunction.keyUp(key);
         if (key && callback instanceof Function) {
-            callback(e) || e.preventDefault();
+            callback.apply(KeyFunction, [e]) || e.preventDefault();
         }
     });
 
-     window.refreshList = function () {
+    window.refreshList = function () {
         $.get('http://' + document.domain + '/api/index.php?r=note', function (fb) {
             if (fb.code == 200) {
                 var html = '';
