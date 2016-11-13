@@ -55,14 +55,27 @@ var FunctionMap = {
 
         Note.setCaret(tabNode, tabString.length);
     },
-    CRLF: function () {
+    createNewLine: function () {
+        var sel = window.getSelection();
+        if (!sel.isCollapsed) return true;
+        var lineNode = sel.anchorNode;
+        while (!(lineNode instanceof HTMLParagraphElement) && lineNode != Note._container) {
+            lineNode = lineNode.parentNode;
+        }
+        if (lineNode == Note._container) return true;
 
+        var newLine = Note.createEmptyLine();
+        lineNode.after(newLine);
+        if (arguments[0] === true) return newLine;
     },
-
+    createNewLine2Go: function () {
+        var newLine = this.createNewLine(true);
+        Note.setCaret(newLine, 0);
+    },
     toUpper: function () {
-        Note.changeCase();
+        return Note.changeCase(false);
     },
     toLower: function () {
-        Note.changeCase();
+        return Note.changeCase(true);
     }
 };

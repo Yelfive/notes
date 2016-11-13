@@ -6,7 +6,6 @@
 /**
  *
  * Base methods for Note
- * @type {{down: {}, _statusKey: Note._statusKey, keyDown: Note.keyDown, keyUp: Note.keyUp, isKeyDown: Note.isKeyDown, _hashedKeyFunction: null, hashKey: Note.hashKey, parse: Note.parse, changeCase: Note.changeCase, setCaret: Note.setCaret, setSelected: Note.setSelected, invoke: Note.invoke, revoke: Note.revoke}}
  */
 var Note = {
     down: {},
@@ -30,7 +29,26 @@ var Note = {
         });
         return sorted.join('-');
     },
-    parse: function (map) {
+    init: function (options) {
+        // Set container
+        this.container(options.container);
+        // Parse map
+        this.parseMap(options.keyMap);
+        // Insert a initial line <p><br/></p>
+        this.firstLine();
+
+        this.validate();
+    },
+    firstLine: function () {
+        if (this._container.childElementCount) return;
+        this._container.innerHTML = this.createEmptyLine().outerHTML;
+    },
+    createEmptyLine: function () {
+        var node = document.createElement('p');
+        node.appendChild(document.createElement('br'));
+        return node;
+    },
+    parseMap: function (map) {
         var self = this;
         self._hashedKeyFunction = {};
         ObjectHelper.each(map, function (k, v) {
@@ -40,16 +58,18 @@ var Note = {
                 throw new Error('Key map should contain an array value for key called "keys"');
             }
         });
-        return self;
     },
-    changeCase: function () {
-
-        var toLowerCase = this.isKeyDown('l');
+    /**
+     * Change the case
+     */
+    changeCase: function (toLowerCase) {
         var sel = window.getSelection();
+        if (sel.isCollapsed) {
+            return false;
+        }
 
         /* Make sure the natural order of the selection: begin from left and end in right */
         var begin, end, beginOffset, endOffset;
-        // console.log(sel.anchorNode, sel.anchorNode.nextSibling)
         if (sel.anchorNode == sel.focusNode
             || sel.containsNode(nextNode(sel.anchorNode), true)
         ) {
@@ -75,7 +95,7 @@ var Note = {
          * @param-internal {int} start Position of
          * @param-internal {int} end
          */
-        function changeCase(node) {
+        function _changeCase(node) {
             var text = node.textContent;
             var start = arguments[1];
             var end = arguments[2];
@@ -106,17 +126,17 @@ var Note = {
             var focusOffset = sel.focusOffset;
             var startPos = Math.min(anchorOffset, focusOffset);
             var endPos = anchorOffset + focusOffset - startPos;
-            changeCase(begin, startPos, endPos);
+            _changeCase(begin, startPos, endPos);
         }
         // Case 2: begin < end
         else {
-            changeCase(begin, beginOffset);
+            _changeCase(begin, beginOffset);
             var current = nextNode(begin);
             while (current && !current.contains(end)) {
-                changeCase(current);
+                _changeCase(current);
                 current = current.nextSibling;
             }
-            changeCase(end, 0, endOffset);
+            _changeCase(end, 0, endOffset);
         }
         this.setSelected(begin, beginOffset, end, endOffset);
     },
@@ -168,15 +188,34 @@ var Note = {
         var action = FunctionMap[map.action];
 
         if (action && action instanceof Function) {
-            return action.call(Key2Function);
+            return action.call(FunctionMap);
         }
         return true;
     },
     revoke: function (event) {
-        var self = this;
-        ObjectHelper.each(this.invokedKeys, function (index, key) {
-            self.keyUp(key);
-        });
-        self.invokedKeys = [];
-    }
+        this.down = {};
+        this.invokedKeys = [];
+    },
+    /**
+     * @param {null|HTMLElement}
+     */
+    _container: null,
+    /**
+     * Set the container for the editor
+     * @param {String|HTMLElement} selector
+     * @returns {Note}
+     */
+    container: function (selector) {
+        switch (selector[0]) {
+            case '#':
+                this._container = document.getElementById(selector.substr(1));
+        }
+        return this;
+    },
+    /**
+     * Check if necessary configure is set
+     */
+    validate: function () {
+        if (!this._container) throw new Error('Call Note.container(selector) to set the container for the editor.');
+    },
 };
