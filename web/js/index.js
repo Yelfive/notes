@@ -2,34 +2,22 @@
  * Created by felix on 11/3/16.
  */
 
+/**
+ * Code-Key: 9 => Tab
+ * Key-Function: Control + Shift + S => save
+ * function: save => function () {perform the save}
+ */
 $(function () {
+    Note.parse(Key2Function);
     $('#content-box').keydown(function (e) {
-        var key, callback, code = e.keyCode;
-        key = CodeKey[code];
-        callback = KeyFunction[key + 'Down'];
-        if (key) KeyFunction.keyDown(key);
-        if (key && callback instanceof Function) {
-            /*
-             * callback should return bool to suggest whether event runs default action
-             * - true: perform the default
-             * - false: prevent the default
-             */
-            callback.apply(KeyFunction, [e]) || e.preventDefault();
-        } else {
-            console.log('"' + e.keyCode + '":', '"' + e.key.replace(/^[a-z]/, function (v) {
-                    return v.toUpperCase()
-                }) + '"');
-        }
-
+        /*
+         * callback should return bool to suggest whether event runs default action
+         * - true: perform the default
+         * - false: prevent the default
+         */
+        Note.invoke(e) || e.preventDefault();
     }).keyup(function (e) {
-        var key, callback, code = e.keyCode;
-        key = CodeKey[code];
-        callback = KeyFunction[key + 'Up'];
-        // todo: optimism lDown = true stuff
-        if (key) KeyFunction.keyUp(key);
-        if (key && callback instanceof Function) {
-            callback.apply(KeyFunction, [e]) || e.preventDefault();
-        }
+        Note.revoke(e);
     });
 
     window.refreshList = function () {

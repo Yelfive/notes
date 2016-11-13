@@ -1,98 +1,51 @@
 /**
- * Created by felix on 11/3/16.
+ * Created by felix on 11/12/16.
  */
 
-"use strict";
-var KeyFunctionBase = function () {
-};
-// KeyFunctionBase.ucfirst = function (value) {
-//     return value.replace(/^[a-z]/, function (v) {
-//         return v.toUpperCase();
-//     })
-// };
-// KeyFunctionBase.lcfirst = function (value) {
-//     return value.replace(/^[A-Z]/, function (v) {
-//         return v.toLowerCase();
-//     })
-// };
 
-String.prototype.lcfirst = function () {
-    return this.replace(/^[A-Z]/, function (v) {
-        return v.toLowerCase();
-    });
-};
-
-KeyFunctionBase.prototype = {
+/**
+ *
+ * Base methods for Note
+ * @type {{down: {}, _statusKey: Note._statusKey, keyDown: Note.keyDown, keyUp: Note.keyUp, isKeyDown: Note.isKeyDown, _hashedKeyFunction: null, hashKey: Note.hashKey, parse: Note.parse, changeCase: Note.changeCase, setCaret: Note.setCaret, setSelected: Note.setSelected, invoke: Note.invoke, revoke: Note.revoke}}
+ */
+var Note = {
+    down: {},
     _statusKey: function (key) {
-        return '_' + key.lcfirst() + 'Down';
+        return key.toLowerCase();
     },
     keyDown: function (key) {
-        this[this._statusKey(key)] = true;
+        this.down[this._statusKey(key)] = true;
     },
     keyUp: function (key) {
-        this[this._statusKey(key)] = false;
+        this.down[this._statusKey(key)] = false;
     },
     isKeyDown: function (key) {
-        return this[this._statusKey(key)];
+        return this.down[this._statusKey(key)] == true;
     },
-    TabDown: function () {
-        if (this.shiftDown) {
-            return true;
-        }
-        /**
-         * @see https://developer.mozilla.org/en-US/docs/Web/API/Range
-         * @see https://developer.mozilla.org/en-US/docs/Web/API/Selection
-         */
-        var tabString = '    ';
-        var range = new Range();
-        var selection = window.getSelection();
-        var tabNode = document.createTextNode(tabString);
-        // set the selection
-        range.setStart(selection.focusNode, selection.anchorOffset);
-        range.insertNode(tabNode);
-        // set the caret
-        selection.removeAllRanges();
-        range.setStart(tabNode, tabString.length);
-        // range.setEnd(tabNode, tabString.length); // this will select from current to new range end point(tabNode content)
-        selection.addRange(range);
+    _hashedKeyFunction: null,
+    hashKey: function (keys) {
+        var sorted = keys.sort();
+        ObjectHelper.each(sorted, function (k, v) {
+            sorted[k] = v.toLowerCase();
+        });
+        return sorted.join('-');
     },
-    SDown: function () {
-        if (!this.isKeyDown('meta')) return true;
-
-        var $id = $('#note-id');
-        var url = 'http://' + document.domain + '/api/index.php?r=note';
-        var data = {
-            'title': $('#title').val(),
-            'content': $('#content-box').html()
-        };
-        var id, action;
-        if (id = $id.val()) {
-            data.id = id;
-            action = 'PUT';
-        } else {
-            action = 'POST';
-        }
-        $.ajax({
-            url: url,
-            type: action,
-            dataType: 'json',
-            data: data,
-            success: function (fb) {
-                if (fb.code == 200) {
-                    $id.val(fb.id);
-                    window.refreshList();
-                }
+    parse: function (map) {
+        var self = this;
+        self._hashedKeyFunction = {};
+        ObjectHelper.each(map, function (k, v) {
+            if (v.keys instanceof Array) {
+                self._hashedKeyFunction[self.hashKey(v.keys)] = {action: v.action, description: v.description};
+            } else {
+                throw new Error('Key map should contain an array value for key called "keys"');
             }
         });
+        return self;
     },
-    UDown: function () {
-        if (!(this.isKeyDown('control') && this.isKeyDown('shift'))) return true;
+    changeCase: function () {
 
         var toLowerCase = this.isKeyDown('l');
         var sel = window.getSelection();
-
-        /** @param  {bool} $forward Whether the selection is forward (or otherwise, backward) */
-        var forward;
 
         /* Make sure the natural order of the selection: begin from left and end in right */
         var begin, end, beginOffset, endOffset;
@@ -132,7 +85,6 @@ KeyFunctionBase.prototype = {
             var prepend = text.substring(0, start);
             var append = text.substring(end, text.length);
             var body = text.substring(start, end);
-            // body = toLowerCase ? body.toLowerCase() : body.toUpperCase();
             body = toLowerCase ? body.toLowerCase() : body.toUpperCase();
             node.textContent = prepend + body + append;
         }
@@ -147,7 +99,7 @@ KeyFunctionBase.prototype = {
             return next ? next : nextNode(node.parentNode);
         }
 
-        // Case 0: collapsed
+        // todo Case 0: collapsed
         // Case 1: begin=end
         if (begin == end) {
             var anchorOffset = sel.anchorOffset;
@@ -168,10 +120,14 @@ KeyFunctionBase.prototype = {
         }
         this.setSelected(begin, beginOffset, end, endOffset);
     },
-    LDown: function () {
-        if (!(this.isKeyDown('control') && this.isKeyDown('shift'))) return true;
-
-        this.UDown();
+    setCaret: function (node, offset) {
+        var selection = window.getSelection();
+        var range = new Range();
+        // set the caret
+        selection.removeAllRanges();
+        range.setStart(node, offset);
+        // range.setEnd(tabNode, tabString.length); // this will select from current to new range end point(tabNode content)
+        selection.addRange(range);
     },
     setSelected: function (begin, beginOffset, end, endOffset) {
         var sel = getSelection();
@@ -180,7 +136,47 @@ KeyFunctionBase.prototype = {
         range.setStart(begin, beginOffset);
         range.setEnd(end, endOffset);
         sel.addRange(range);
+    },
+    invokedKeys: [],
+    invoke: function (event) {
+        if (null == this._hashedKeyFunction) throw new Error('Map should be parsed first.');
+
+        var key = Code2Key[event.keyCode];
+        if (key) {
+            this.keyDown(key);
+        } else {
+            if (console) console.log('"' + event.keyCode + '":', '"' + event.key.replace(/^[a-z]/, function (v) {
+                    return v.toUpperCase()
+                }) + '"');
+            return true;
+        }
+
+        // Retrieve pressed keys
+        this.invokedKeys = [];
+        for (var p in this.down) {
+            if (this.down[p]) {
+                this.invokedKeys.push(p);
+            }
+        }
+
+        var map = this.invokedKeys.length ? this._hashedKeyFunction[this.hashKey(this.invokedKeys)] : null;
+        if (!map) {
+            if (console && console.info) console.info('No action bound with: ' + this.invokedKeys.join('-'));
+            return true;
+        }
+
+        var action = FunctionMap[map.action];
+
+        if (action && action instanceof Function) {
+            return action.call(Key2Function);
+        }
+        return true;
+    },
+    revoke: function (event) {
+        var self = this;
+        ObjectHelper.each(this.invokedKeys, function (index, key) {
+            self.keyUp(key);
+        });
+        self.invokedKeys = [];
     }
 };
-
-var KeyFunction = new KeyFunctionBase();

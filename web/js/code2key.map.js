@@ -1,4 +1,4 @@
-var CodeKey = {
+var Code2Key = {
     "9": "Tab",
     "16": "Shift",
     "17": "Control",
