@@ -55,7 +55,7 @@ var FunctionMap = {
 
         Note.setCaret(tabNode, tabString.length);
     },
-    createNewLine: function () {
+    createNewLineBelow: function () {
         var currentLine = Note.firstBlockParent();
         if (!currentLine) return true;
 
@@ -63,8 +63,8 @@ var FunctionMap = {
         currentLine.after(newLine);
         if (arguments[0] === true) return newLine;
     },
-    createNewLine2Go: function () {
-        var newLine = this.createNewLine(true);
+    createNewLineBelow2Go: function () {
+        var newLine = this.createNewLineBelow(true);
         Note.setCaret(newLine, 0);
     },
     toUpper: function () {
@@ -81,21 +81,23 @@ var FunctionMap = {
         }
 
         if (line.innerHTML === '```') {
-            // todo: try using ul   li  instead
-            line.innerHTML = '<code><div><br></div></code>';
-            line.after(this.createNewLine(true));
+            line.innerHTML = '<code><ul><li></li></ul></code>';
+            line.after(this.createNewLineBelow(true));
             Note.setCaret(line.firstChild, 0);
         } else if (line.childNodes.length === 1 && line.firstChild.nodeName === 'CODE') { // code
-            // var sel = Note.selectionCollapse();
-            // var node = Note.firstParentsNode(sel.anchorNode, 'li');
-            // if (node) {
-            //     var newLine = document.createElement('li');
-            //     newLine.innerHTML = '<br>';
-            //     node.after(newLine);
-            //     Note.setCaret(newLine, 0);
-            // }
-        // } else {
+            var node = Note.firstBlockParent();
+            console.log(node, node.children)
+            if (!node) return false;
+
+            var children = node.children;
+            if (children.length === 1 && children[0].nodeName === 'BR') { // in case it's empty li
+                this.createNewLineBelow2Go();
+            } else {
+                return true;
+            }
+        } else {
+            return true;
         }
-        return true;
     }
 };
+// todo: keyup to disable common keys but functional keys like (control shift)

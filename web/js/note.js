@@ -252,12 +252,14 @@ var Note = {
         return sel;
     },
     /**
-     *
+     * Find first block parent element
+     * - if param is given, the param should be instance of Node, and the first block contains that node will be returned
+     * - if no param given, first block contains current caret will be returned
      * @param-internal {Node} node
      * @returns {Node|Null}
      */
     firstBlockParent: function () {
-        var node = arguments[0] ? arguments[1] : this.selectionCollapse().anchorNode;
+        var node = arguments[0] ? arguments[0] : this.selectionCollapse().anchorNode;
 
         var parentNodeNames = ['P', 'DIV', 'LI'];
         var blockNode = null;
