@@ -56,16 +56,11 @@ var FunctionMap = {
         Note.setCaret(tabNode, tabString.length);
     },
     createNewLine: function () {
-        var sel = window.getSelection();
-        if (!sel.isCollapsed) return true;
-        var lineNode = sel.anchorNode;
-        while (!(lineNode instanceof HTMLParagraphElement) && lineNode != Note._container) {
-            lineNode = lineNode.parentNode;
-        }
-        if (lineNode == Note._container) return true;
+        var currentLine = Note.firstBlockParent();
+        if (!currentLine) return true;
 
-        var newLine = Note.createEmptyLine();
-        lineNode.after(newLine);
+        var newLine = Note.createEmptyLine(currentLine.nodeName);
+        currentLine.after(newLine);
         if (arguments[0] === true) return newLine;
     },
     createNewLine2Go: function () {
@@ -77,5 +72,30 @@ var FunctionMap = {
     },
     toLower: function () {
         return Note.changeCase(true);
+    },
+    extend: function () {
+        var line = Note.getCurrentLine();
+
+        if (line && Note.invokedKeys.length !== 1 && Note.invokedKeys[0] !== 'enter') {
+            return true;
+        }
+
+        if (line.innerHTML === '```') {
+            // todo: try using ul   li  instead
+            line.innerHTML = '<code><div><br></div></code>';
+            line.after(this.createNewLine(true));
+            Note.setCaret(line.firstChild, 0);
+        } else if (line.childNodes.length === 1 && line.firstChild.nodeName === 'CODE') { // code
+            // var sel = Note.selectionCollapse();
+            // var node = Note.firstParentsNode(sel.anchorNode, 'li');
+            // if (node) {
+            //     var newLine = document.createElement('li');
+            //     newLine.innerHTML = '<br>';
+            //     node.after(newLine);
+            //     Note.setCaret(newLine, 0);
+            // }
+        // } else {
+        }
+        return true;
     }
 };

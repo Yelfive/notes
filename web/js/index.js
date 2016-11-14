@@ -10,7 +10,6 @@
 $(function () {
     Note.init({container: '#content-box', keyMap: Key2Function});
     $('#content-box').keydown(function (e) {
-        console.warn('down');
         /*
          * callback should return bool to suggest whether event runs default action
          * - true: perform the default

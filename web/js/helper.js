@@ -89,8 +89,11 @@ var ArrayHelper = {
      */
     in: function (needle, haystack) {
         var in_array = false;
-        this.each(haystack, function (k, v) {
-            in_array = needle == v;
+        ObjectHelper.each(haystack, function (k, v) {
+            if (needle == v) {
+                in_array = true;
+                return false;
+            }
         });
         return in_array;
     },

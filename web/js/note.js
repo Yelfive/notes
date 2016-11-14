@@ -43,8 +43,9 @@ var Note = {
         if (this._container.childElementCount) return;
         this._container.innerHTML = this.createEmptyLine().outerHTML;
     },
-    createEmptyLine: function () {
-        var node = document.createElement('p');
+    createEmptyLine: function (nodeName) {
+        if (!nodeName) nodeName = 'p';
+        var node = document.createElement(nodeName);
         node.appendChild(document.createElement('br'));
         return node;
     },
@@ -192,7 +193,7 @@ var Note = {
         }
         return true;
     },
-    revoke: function (event) {
+    revoke: function () {
         this.down = {};
         this.invokedKeys = [];
     },
@@ -212,10 +213,61 @@ var Note = {
         }
         return this;
     },
+    PARAGRAPH_TYPE: HTMLParagraphElement,
     /**
      * Check if necessary configure is set
      */
     validate: function () {
         if (!this._container) throw new Error('Call Note.container(selector) to set the container for the editor.');
     },
+    /**
+     * Return current line paragraph
+     * - If the current selection is not collapsed, the selection will collapse to anchor position
+     * @returns {Null|Note.PARAGRAPH_TYPE}
+     */
+    getCurrentLine: function () {
+        var sel = this.selectionCollapse();
+        var line = sel.anchorNode;
+
+        while (!(line instanceof this.PARAGRAPH_TYPE) && line != this._container) {
+            line = line.parentNode;
+        }
+
+        if (line instanceof this.PARAGRAPH_TYPE) return line;
+        return null;
+    },
+    selectionCollapse: function () {
+        var toFocus = arguments[0];
+
+        var sel = window.getSelection();
+        var node, offset;
+        if (toFocus) {
+            node = sel.focusNode;
+            offset = sel.focusOffset;
+        } else {
+            node = sel.anchorNode;
+            offset = sel.anchorOffset;
+        }
+        if (sel.isCollapsed == false) sel.collapse(node, offset);
+        return sel;
+    },
+    /**
+     *
+     * @param-internal {Node} node
+     * @returns {Node|Null}
+     */
+    firstBlockParent: function () {
+        var node = arguments[0] ? arguments[1] : this.selectionCollapse().anchorNode;
+
+        var parentNodeNames = ['P', 'DIV', 'LI'];
+        var blockNode = null;
+        while (node instanceof Node && this._container.contains(node)) {
+            if (ArrayHelper.in(node.nodeName, parentNodeNames)) {
+                blockNode = node;
+                break;
+            }
+            node = node.parentNode;
+        }
+        return blockNode;
+    }
 };
