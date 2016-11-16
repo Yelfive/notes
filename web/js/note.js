@@ -41,10 +41,14 @@ var Note = {
     },
     firstLine: function () {
         if (this._container.childElementCount) return;
-        this._container.innerHTML = this.createEmptyLine().outerHTML;
+        this._container.innerHTML = HtmlHelper.tag('ul', this.createEmptyLine().outerHTML);
     },
+    /**
+     * @param nodeName
+     * @returns {Element}
+     */
     createEmptyLine: function (nodeName) {
-        if (!nodeName) nodeName = 'p';
+        if (!nodeName) nodeName = 'li';
         var node = document.createElement(nodeName);
         node.appendChild(document.createElement('br'));
         return node;
@@ -213,7 +217,7 @@ var Note = {
         }
         return this;
     },
-    PARAGRAPH_TYPE: HTMLParagraphElement,
+    PARAGRAPH_TYPE: HTMLLIElement,
     /**
      * Check if necessary configure is set
      */
@@ -271,5 +275,33 @@ var Note = {
             node = node.parentNode;
         }
         return blockNode;
+    },
+    /**
+     * Canonicalize given line into into formal Note.PARAGRAPH_TYPE line
+     * and returns it
+     * This is used when press 'Enter' in pasted lines, and the format is not supposed
+     * @param {HTMLElement} line
+     * @returns {Node}
+     */
+    canonicalize: function (line) {
+        if (!(line instanceof this.PARAGRAPH_TYPE)) { // change into a PARAGRAPH_TYPE node
+            var newLine = this.createEmptyLine();
+            // newLine.innerHTML = line.innerHTML;
+            // var sel = window.getSelection();
+            var range = new Range();
+            range.setEnd(line, 0);
+            range.insertNode(newLine);
+            newLine.appendChild(line);
+            // line.parentNode.removeChild(line);
+            line = newLine;
+            console.log(newLine);
+        } else if (/^\s*$/.test(line.innerHTML)) { //
+
+        }
+        return line;
+    },
+    isEmptyLine: function (line) {
+        var children = line.children;
+        return children.length === 1 && (children[0].nodeName === 'BR' || /^\s*$/.test(children[0].innerText))
     }
 };

@@ -1,26 +1,18 @@
-<!DOCTYPE html>
+<!DOCTYPE HTML>
 <html>
 <head>
-    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="UTF-8">
     <title></title>
-    <script>
-        function setCaret() {
-            var el = document.getElementById("editable");
-            var range = document.createRange();
-            var sel = window.getSelection();
-            range.setStart(el.childNodes[2], 5);
-//            range.collapse(true);
-            sel.removeAllRanges();
-            sel.addRange(range);
-            el.focus();
-        }
-
-    </script>
 </head>
 <body>
-<form action="">
-    <input type="text" value="abc">
-    <input type="reset">
-</form>
+"<span id="a"></span>"
+<script>
+    var s = ' ';
+    var s = '&nbsp;';
+    s = s.repeat(4);
+    var a = document.createTextNode(s);
+    console.log(a.textContent)
+    document.getElementById('a').appendChild(a);
+</script>
 </body>
 </html>

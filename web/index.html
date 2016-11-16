@@ -7,7 +7,8 @@
         html, body {
             width: 100%;
             height: 100%;
-            font-size: 14px;
+            font-size: 12px;
+            font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
         }
 
         ul, div, html, body {
@@ -50,8 +51,10 @@
             color: #b7b7b7;
         }
 
-        #container-pre {
+        #content-box {
             height: 80%;
+            width: 99%;
+            white-space: pre;
         }
 
         #content-box p {
@@ -68,6 +71,10 @@
             padding: 0.4rem;
             border-radius: 5px;
         }
+
+        #content-box code ul {
+            list-style: none;
+        }
     </style>
 </head>
 <body>
@@ -75,13 +82,9 @@
 <div id="container">
     <input type="hidden" name="id" id="note-id">
     <input class="outline-0" id="title" type="text" placeholder="Title">
-<pre id="container-pre">
-<div class="outline-0" id="content-box" contenteditable="true">
-</div>
-</pre>
-    <div id="message">
-
-    </div>
+    <div class="outline-0" id="content-box" contenteditable="true"></div>
+    <div id="message"></div>
+    <button id="btn">Canonalize</button>
 </div>
 </body>
 <script src="js/jquery-3.1.1.min.js"></script>
@@ -91,4 +94,29 @@
 <script src="js/function.map.js"></script>
 <script src="js/note.js"></script>
 <script src="js/index.js"></script>
+<script>
+    $('#btn').click(function () {
+        var html = '<ul>';
+        var $box = document.getElementById('content-box');
+        var children = $box.childNodes;
+
+        console.log(children)
+        var _;
+        ObjectHelper.each(children, function (k, v) {
+            if (v instanceof Node) {
+                if (v instanceof Text) {
+                    _ = v.textContent;
+                } else if (v instanceof HTMLPreElement) {
+                    _ = v.outerHTML;
+                } else {
+                    _ = v.innerHTML;
+                }
+                if (/^\s*$/.test(_)) _ = '<br>';
+                html += HtmlHelper.tag('li', _);
+            }
+        });
+        html += '</ul>';
+        $('#content-box').html(html);
+    })
+</script>
 </html>
