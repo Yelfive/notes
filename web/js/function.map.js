@@ -46,8 +46,7 @@ var FunctionMap = {
          * @see https://developer.mozilla.org/en-US/docs/Web/API/Selection
          */
         var sp = ' ';
-        var tabString = sp.repeat(4);
-        console.log(tabString)
+        var tabString = sp.repeat(Note.tabLength);
         var range = new Range();
         var selection = window.getSelection();
         var tabNode = document.createTextNode(tabString);
@@ -77,25 +76,33 @@ var FunctionMap = {
         return Note.changeCase(true);
     },
     extend: function () {
-        // var line = Note.getCurrentLine();
-
         // In case not only "Enter" is pressed
         if (Note.invokedKeys.length !== 1 || Note.invokedKeys[0] !== 'enter') {
             return true;
         }
 
+        /*
+         * Check if the last line is empty line, otherwise, create new line
+         * This makes sure there always is an empty line at the end of the note
+         * TODO: maybe, a afterExtend function is needed
+         */
+        Note.ensureLastLineEmpty();
+
         var line = Note.getCurrentLine();
+        var info;
         // line does not exist
         if (!line || !(line instanceof Note.PARAGRAPH_TYPE)) {
             return true;
         }
         // empty line
-        else if (Note.isEmptyLine(line)) { // <li></li>
+        else if (line.isEmptyLine()) { // <li></li>
             return this.createNewLineBelow2Go();
         }
         // code block
-        else if (line.innerHTML === '```') {
-            line.innerHTML = '<code><ul><li><br></li></ul></code>';
+        else if (info = line.isCodeBlock()) {
+            // todo: info[1] , "php" to highlight semantically
+            var indent = parseInt(info[0].length / Note.tabLength * 2);
+            line.innerHTML = '<code' + (indent ? ' style="margin-left:' + indent + 'rem"' : '') + '><ul><li><br></li></ul></code>';
             line.after(this.createNewLineBelow(true));
             Note.setCaret(line.firstChild, 0);
         } else {

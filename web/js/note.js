@@ -9,6 +9,7 @@
  */
 var Note = {
     down: {},
+    tabLength: 4,
     _statusKey: function (key) {
         return key.toLowerCase();
     },
@@ -294,14 +295,34 @@ var Note = {
             newLine.appendChild(line);
             // line.parentNode.removeChild(line);
             line = newLine;
-            console.log(newLine);
         } else if (/^\s*$/.test(line.innerHTML)) { //
 
         }
         return line;
     },
-    isEmptyLine: function (line) {
-        var children = line.children;
-        return children.length === 1 && (children[0].nodeName === 'BR' || /^\s*$/.test(children[0].innerText))
+    /**
+     * Check if the last line is empty line, otherwise, create new line
+     * This makes sure there always is an empty line at the end of the note
+     */
+    ensureLastLineEmpty: function () {
+        var lastLine = this._container.lastChild ? this._container.lastChild.lastChild : this._container.lastChild;
+        if (!lastLine.isEmptyLine()) lastLine.after(this.createEmptyLine());
     }
 };
+
+ObjectHelper.each({
+    /**
+     * Return information about code block, if it is a code block
+     * @returns {Array|Boolean}
+     */
+    isCodeBlock: function () {
+        var match = this.innerText.match(/^(\s*)`{3}(\w*)\s*$/);
+        return match == null ? false : [match[1], match[2]];
+    },
+    isEmptyLine: function () {
+        var children = this.childNodes;
+        return children.length === 1 && (children[0].nodeName === 'BR' || /^\s*$/.test(children[0].innerText))
+    }
+}, function (k, v) {
+    Element.prototype[k] = v;
+});
