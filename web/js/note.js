@@ -272,6 +272,22 @@ var Note = {
     ensureLastLineEmpty: function () {
         var lastLine = this._container.lastChild ? this._container.lastChild.lastChild : this._container.lastChild;
         if (!lastLine.isEmpty()) lastLine.after(this.createEmptyLine());
+    },
+    codeClass: function (language) {
+        var cls = "fc";
+        if (/^\s*$/.test(language)) {
+            return cls;
+        }
+        language = language.toLowerCase();
+        cls += ' ';
+        switch (language) {
+            case 'javascript':
+                cls += 'js';
+                break;
+            default:
+                cls += language;
+        }
+        return cls;
     }
 };
 

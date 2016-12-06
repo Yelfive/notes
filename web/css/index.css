@@ -77,6 +77,6 @@ ul, div, html, body {
 }
 
 #content-box td, th {
+    padding: 5px 0;
     border: 1px solid #dddddd;
-    min-height: 2rem;
 }
