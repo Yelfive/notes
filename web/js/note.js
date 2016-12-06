@@ -10,6 +10,7 @@
 var Note = {
     down: {},
     tabLength: 4,
+    PARAGRAPH_TYPE: HTMLDivElement,
     _statusKey: function (key) {
         return key.toLowerCase();
     },
@@ -35,21 +36,21 @@ var Note = {
         this.container(options.container);
         // Parse map
         this.parseMap(options.keyMap);
-        // Insert a initial line <p><br/></p>
+        // Insert a initial line
         this.firstLine();
 
         this.validate();
     },
     firstLine: function () {
         if (this._container.childElementCount) return;
-        this._container.innerHTML = HtmlHelper.tag('ul', this.createEmptyLine().outerHTML);
+        this._container.innerHTML = this.PARAGRAPH_TYPE == HTMLLIElement ? HtmlHelper.tag('ul', this.createEmptyLine().outerHTML) : this.createEmptyLine().outerHTML;
     },
     /**
      * @param nodeName
      * @returns {Element}
      */
     createEmptyLine: function (nodeName) {
-        if (!nodeName) nodeName = 'li';
+        if (!nodeName) nodeName = this.PARAGRAPH_TYPE == HTMLDivElement ? 'div' : 'li';
         var node = document.createElement(nodeName);
         node.appendChild(document.createElement('br'));
         return node;
@@ -218,7 +219,6 @@ var Note = {
         }
         return this;
     },
-    PARAGRAPH_TYPE: HTMLLIElement,
     /**
      * Check if necessary configure is set
      */
@@ -226,56 +226,21 @@ var Note = {
         if (!this._container) throw new Error('Call Note.container(selector) to set the container for the editor.');
     },
     /**
-     * Return current line paragraph
-     * - If the current selection is not collapsed, the selection will collapse to anchor position
-     * @returns {Null|Note.PARAGRAPH_TYPE}
-     */
-    getCurrentLine: function () {
-        var sel = this.selectionCollapse();
-        var line = sel.anchorNode;
-
-        while (!(line instanceof this.PARAGRAPH_TYPE) && line != this._container) {
-            line = line.parentNode;
-        }
-
-        if (line instanceof this.PARAGRAPH_TYPE) return line;
-        return null;
-    },
-    selectionCollapse: function () {
-        var toFocus = arguments[0];
-
-        var sel = window.getSelection();
-        var node, offset;
-        if (toFocus) {
-            node = sel.focusNode;
-            offset = sel.focusOffset;
-        } else {
-            node = sel.anchorNode;
-            offset = sel.anchorOffset;
-        }
-        if (sel.isCollapsed == false) sel.collapse(node, offset);
-        return sel;
-    },
-    /**
      * Find first block parent element
-     * - if param is given, the param should be instance of Node, and the first block contains that node will be returned
+     * - todo if param is given, the param should be instance of Node, and the first block contains that node will be returned
      * - if no param given, first block contains current caret will be returned
      * @param-internal {Node} node
      * @returns {Node|Null}
      */
-    firstBlockParent: function () {
-        var node = arguments[0] ? arguments[0] : this.selectionCollapse().anchorNode;
+    getCurrentLine: function () {
+        var sel = window.getSelection();
+        var line = sel.anchorNode;
 
-        var parentNodeNames = ['P', 'DIV', 'LI'];
-        var blockNode = null;
-        while (node instanceof Node && this._container.contains(node)) {
-            if (ArrayHelper.in(node.nodeName, parentNodeNames)) {
-                blockNode = node;
-                break;
-            }
-            node = node.parentNode;
+        while (line && line != this._container) {
+            if (line.isLine()) return line;
+            line = line.parentNode;
         }
-        return blockNode;
+        return null;
     },
     /**
      * Canonicalize given line into into formal Note.PARAGRAPH_TYPE line
@@ -306,11 +271,28 @@ var Note = {
      */
     ensureLastLineEmpty: function () {
         var lastLine = this._container.lastChild ? this._container.lastChild.lastChild : this._container.lastChild;
-        if (!lastLine.isEmptyLine()) lastLine.after(this.createEmptyLine());
+        if (!lastLine.isEmpty()) lastLine.after(this.createEmptyLine());
     }
 };
 
 ObjectHelper.each({
+    /**
+     * @return {boolean} Indicates if the line is empty
+     */
+    isEmpty: function () {
+        var children = this.childNodes;
+        return children.length === 1 && (children[0].nodeName === 'BR' || /^\s*$/.test(children[0].innerText))
+    },
+    /**
+     *  Line elements:
+     *  - p
+     *  - div
+     *  - li
+     * @returns {boolean}
+     */
+    isLine: function () {
+        return ArrayHelper.in(this.nodeName, ['P', 'DIV', 'LI']);
+    },
     /**
      * Return information about code block, if it is a code block
      * @returns {Array|Boolean}
@@ -319,10 +301,43 @@ ObjectHelper.each({
         var match = this.innerText.match(/^(\s*)`{3}(\w*)\s*$/);
         return match == null ? false : [match[1], match[2]];
     },
-    isEmptyLine: function () {
-        var children = this.childNodes;
-        return children.length === 1 && (children[0].nodeName === 'BR' || /^\s*$/.test(children[0].innerText))
+    isTableBlock: function () {
+        // |x|x|, the table must start and end with "|"
+        var match = this.innerHTML.match(/^\s*(?:\|[^\|]+)+\|\s*$/g);
+        if (match instanceof Array) {
+            var cells = match[0].split('|');
+            cells.shift();
+            cells.pop();
+            return cells;
+        } else {
+            return false;
+        }
+    },
+    isExtensible: function () {
+        var sel = window.getSelection();
+        if (!sel.isCollapsed) return false;
+        /*
+         * 1. current line contains only text
+         * 2. current line contains text and tags with no text (this is text<br>)
+         *
+         * And for both of the situations, they match innerText.length=selection.offset
+         * ```html
+         * This is <b>strong text</b>
+         * ```
+         * When the caret is in the end
+         * - `offset=0`     (offset starts from </b>)
+         * - `innerText.length=19`
+         * So they won't match, and that won't be considered as extensible
+         */
+        var range = new Range();
+        // Set the range contains the whole line
+        range.selectNodeContents(this);
+        // Set the start position for the range, to minimize the range
+        // This range starts from selected anchor and offset, ends at the end of the line
+        range.setStart(sel.anchorNode, sel.anchorOffset);
+        // Check if the range contains anything
+        return range.cloneContents().textContent.length == 0;
     }
 }, function (k, v) {
-    Element.prototype[k] = v;
+    Node.prototype[k] = v;
 });

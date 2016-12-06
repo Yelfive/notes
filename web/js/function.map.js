@@ -57,8 +57,13 @@ var FunctionMap = {
 
         Note.setCaret(tabNode, tabString.length);
     },
+    /**
+     * @param-internal {boolean} $return Whether to return the created line
+     * @returns {*}
+     */
     createNewLineBelow: function () {
-        var currentLine = Note.firstBlockParent();
+        // var currentLine = Note.firstBlockParent();
+        var currentLine = Note.getCurrentLine();
         if (!currentLine) return true;
 
         var newLine = Note.createEmptyLine(currentLine.nodeName);
@@ -67,7 +72,11 @@ var FunctionMap = {
     },
     createNewLineBelow2Go: function () {
         var newLine = this.createNewLineBelow(true);
-        Note.setCaret(newLine, 0);
+        if (newLine) {
+            Note.setCaret(newLine, 0);
+        } else {
+            return true;
+        }
     },
     toUpper: function () {
         return Note.changeCase(false);
@@ -90,25 +99,47 @@ var FunctionMap = {
 
         var line = Note.getCurrentLine();
         var info;
+
         // line does not exist
-        if (!line || !(line instanceof Note.PARAGRAPH_TYPE)) {
-            return true;
-        }
+        if (!line) return true;
         // empty line
-        else if (line.isEmptyLine()) { // <li></li>
-            return this.createNewLineBelow2Go();
-        }
+        if (line.isEmpty()) return this.createNewLineBelow2Go();
+        // caret in the end, and its content is bare text
+        if (!line.isExtensible()) return true;
+
         // code block
-        else if (info = line.isCodeBlock()) {
+        if (info = line.isCodeBlock()) {
             // todo: info[1] , "php" to highlight semantically
+            console.log('spaces', info[0].length, ';', 'language', info[1]);
             var indent = parseInt(info[0].length / Note.tabLength * 2);
-            line.innerHTML = '<code' + (indent ? ' style="margin-left:' + indent + 'rem"' : '') + '><ul><li><br></li></ul></code>';
+            var cls = Note.codeClass(info[1]);
+            line.innerHTML = '<code' + (indent ? ' style="margin-left:' + indent + 'rem"' : '') + ' class="' + cls + '"><ul><li><br></li></ul></code>';
             line.after(this.createNewLineBelow(true));
             Note.setCaret(line.firstChild, 0);
-        } else {
-            return true;
+            return false;
         }
+        // table block
+        if (info = line.isTableBlock()) {
+            var tag = function () {
+                return HtmlHelper.tag.apply(HtmlHelper, arguments);
+            };
+
+            var head = '';
+            var body = '';
+            for (var i = 0; i < info.length; i++) {
+                head += tag('th', info[i]);
+                body += tag('td', '<br>');
+            }
+            line.innerHTML = tag('table', tag('thead', tag('tr', head)) + tag('tbody', tag('tr', body)));
+            var firstTd = line.querySelector('tbody').querySelector('td');
+            setTimeout(function () {
+                Note.setCaret(firstTd, 0);
+                firstTd.innerHTML = '<br>';
+            }, 0);
+        }
+        return true;
     }
 };
 
 // todo: keyup to disable common keys but functional keys like (control shift)
+// todo: e.g. control+enter(multi-enters)

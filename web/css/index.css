@@ -69,3 +69,14 @@ ul, div, html, body {
 #content-box code ul {
     list-style: none;
 }
+
+#content-box table {
+    width: 100%;
+    border-spacing: 0;
+    border-collapse: collapse;
+}
+
+#content-box td, th {
+    border: 1px solid #dddddd;
+    min-height: 2rem;
+}
