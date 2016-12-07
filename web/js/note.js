@@ -270,8 +270,11 @@ var Note = {
      * This makes sure there always is an empty line at the end of the note
      */
     ensureLastLineEmpty: function () {
-        var lastLine = this._container.lastChild ? this._container.lastChild.lastChild : this._container.lastChild;
-        if (!lastLine.isEmpty()) lastLine.after(this.createEmptyLine());
+        var container = this._container;
+        var lastLine = container.lastChild;
+        if (!lastLine || !lastLine.isEmpty()) {
+            container.appendChild(this.createEmptyLine());
+        }
     },
     codeClass: function (language) {
         var cls = "fc";

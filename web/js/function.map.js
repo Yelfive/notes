@@ -143,3 +143,5 @@ var FunctionMap = {
 
 // todo: keyup to disable common keys but functional keys like (control shift)
 // todo: e.g. control+enter(multi-enters)
+
+// todo: arrow up/down/left/right
