@@ -50,7 +50,8 @@ var Note = {
      * @returns {Element}
      */
     createEmptyLine: function (nodeName) {
-        if (!nodeName) nodeName = this.PARAGRAPH_TYPE == HTMLDivElement ? 'div' : 'li';
+        if (!nodeName || nodeName === '#text') nodeName = this.PARAGRAPH_TYPE == HTMLDivElement ? 'div' : 'li';
+
         var node = document.createElement(nodeName);
         node.appendChild(document.createElement('br'));
         return node;
@@ -147,13 +148,22 @@ var Note = {
         }
         this.setSelected(begin, beginOffset, end, endOffset);
     },
+    surround: function (text) {
+        if (text instanceof Node) {
+            var wrap = this.createEmptyLine();
+            var range = new Range();
+            range.selectNode(text);
+            range.surroundContents(wrap);
+            return wrap;
+        }
+    },
     setCaret: function (node, offset) {
         var selection = window.getSelection();
         var range = new Range();
         // set the caret
         selection.removeAllRanges();
         range.setStart(node, offset);
-        // range.setEnd(tabNode, tabString.length); // this will select from current to new range end point(tabNode content)
+        // range.setEnd(tabNode, tabString.length); // this will select from current to new range end point
         selection.addRange(range);
     },
     setSelected: function (begin, beginOffset, end, endOffset) {
@@ -195,7 +205,17 @@ var Note = {
         var action = FunctionMap[map.action];
 
         if (action && action instanceof Function) {
-            return action.call(FunctionMap);
+            var performDefault = action.call(FunctionMap);
+            /*
+             * action -> afterAction
+             */
+            var afterAction = FunctionMap['after' + map.action.replace(/^\w/, function (word) {
+                return word.toUpperCase();
+            })];
+            if (afterAction && afterAction instanceof Function) {
+                afterAction.call(FunctionMap);
+            }
+            if (!performDefault) event.preventDefault();
         }
         return true;
     },
@@ -236,9 +256,13 @@ var Note = {
         var sel = window.getSelection();
         var line = sel.anchorNode;
 
+        // while (line && this._container.contains(line)) {
         while (line && line != this._container) {
             if (line.isLine()) return line;
             line = line.parentNode;
+        }
+        if (sel.anchorNode instanceof Text) {
+            return sel.anchorNode;
         }
         return null;
     },
@@ -291,6 +315,53 @@ var Note = {
                 cls += language;
         }
         return cls;
+    },
+    surroundTextNodes: function () {
+        var range = new Range();
+        range.selectNode(this._container.firstChild);
+        var sel = window.getSelection();
+
+        // Record in variable, in case it be overwritten after `range.surroundContents` called
+        var current = {
+            an: sel.anchorNode,
+            ao: sel.anchorOffset,
+            fn: sel.focusNode,
+            fo: sel.focusOffset
+        };
+
+        var line = this.createEmptyLine();
+        range.surroundContents(line);
+
+        if (current.ao != current.fo || current.an != current.fn) {
+            var r = new Range();
+            r.setStart(current.an, current.ao);
+            r.setEnd(current.fn, current.fo);
+            r.deleteContents();
+        }
+        range = new Range;
+        range.setStart(current.an, current.ao);
+        // range.setEnd(current.fn, current.fo);
+        sel.removeAllRanges();
+        sel.addRange(range);
+        return line;
+
+        var nodes = this._container.childNodes;
+        var start;
+        // abc<a>abc</a>
+        var self = this;
+        var anchorNode = getSelection().anchorNode;
+        ObjectHelper.each(nodes, function (k, node) {
+            if (ObjectHelper.instanceOf(node, Text) && !start) {
+                range.setStart(node, 0);
+                start = node;
+            }
+            if (start && (ObjectHelper.instanceOf(node, Element) || !nodes[k + 1])) {
+                range.setEnd(start, start.textContent.length);
+                range.surroundContents(self.createEmptyLine());
+                start = false;
+            }
+        });
+        return self.getCurrentLine();
     }
 };
 
@@ -299,8 +370,18 @@ ObjectHelper.each({
      * @return {boolean} Indicates if the line is empty
      */
     isEmpty: function () {
+        if (this instanceof Text) {
+            return this.textContent.length === 0;
+        }
         var children = this.childNodes;
-        return children.length === 1 && (children[0].nodeName === 'BR' || /^\s*$/.test(children[0].innerText))
+        if (children.length === 0) {
+            return true;
+        }
+        if (children.length === 1 && children[0].nodeName === 'BR') {
+            return true;
+        }
+        return false;
+        // return children.length === 0 || children.length === 1 && (children[0].nodeName === 'BR' || /^\s*$/.test(children[0].innerText))
     },
     /**
      *  Line elements:
@@ -312,17 +393,24 @@ ObjectHelper.each({
     isLine: function () {
         return ArrayHelper.in(this.nodeName, ['P', 'DIV', 'LI']);
     },
+    getText: function () {
+        // return this instanceof Text ? this.textContent : this.in
+        if (this instanceof Text) return this.textContent;
+        if (this instanceof Element) return this.innerText;
+    },
     /**
      * Return information about code block, if it is a code block
      * @returns {Array|Boolean}
      */
     isCodeBlock: function () {
-        var match = this.innerText.match(/^(\s*)`{3}(\w*)\s*$/);
+        var match = this.getText().match(/^(\s*)`{3}(\w*)\s*$/);
+        // var match = this.innerText.match(/^(\s*)`{3}(\w*)\s*$/);
         return match == null ? false : [match[1], match[2]];
     },
     isTableBlock: function () {
         // |x|x|, the table must start and end with "|"
-        var match = this.innerHTML.match(/^\s*(?:\|[^\|]+)+\|\s*$/g);
+        var match = this.getText().match(/^\s*(?:\|[^\|]+)+\|\s*$/g);
+        // var match = this.innerHTML.match(/^\s*(?:\|[^\|]+)+\|\s*$/g);
         if (match instanceof Array) {
             var cells = match[0].split('|');
             cells.shift();

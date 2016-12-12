@@ -33,5 +33,6 @@ var Code2Key = {
     "89": "Y",
     "90": "Z",
 
+    "8": "Backspace",
     "13": "Enter"
 };

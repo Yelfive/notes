@@ -62,7 +62,6 @@ var FunctionMap = {
      * @returns {*}
      */
     createNewLineBelow: function () {
-        // var currentLine = Note.firstBlockParent();
         var currentLine = Note.getCurrentLine();
         if (!currentLine) return true;
 
@@ -90,18 +89,16 @@ var FunctionMap = {
             return true;
         }
 
-        /*
-         * Check if the last line is empty line, otherwise, create new line
-         * This makes sure there always is an empty line at the end of the note
-         * TODO: maybe, a afterExtend function is needed
-         */
-        Note.ensureLastLineEmpty();
-
         var line = Note.getCurrentLine();
         var info;
 
         // line does not exist
-        if (!line) return true;
+        // TODO: what to do to disable deletion for empty contain, don't delete the last <div></div>
+        // TODO: or how to wrap every line, when they come from clipboard
+        // if (!line) line = Note.surroundTextNodes();
+        // return false;
+        // if (!line) return true;
+
         // empty line
         if (line.isEmpty()) return this.createNewLineBelow2Go();
         // caret in the end, and its content is bare text
@@ -113,8 +110,10 @@ var FunctionMap = {
             console.log('spaces', info[0].length, ';', 'language', info[1]);
             var indent = parseInt(info[0].length / Note.tabLength * 2);
             var cls = Note.codeClass(info[1]);
+            if (line instanceof Text) line = Note.surround(line);
             line.innerHTML = '<code' + (indent ? ' style="margin-left:' + indent + 'rem"' : '') + ' class="' + cls + '"><ul><li><br></li></ul></code>';
-            line.after(this.createNewLineBelow(true));
+            // console.log(line);
+            // line.after(this.createNewLineBelow(true));
             Note.setCaret(line.firstChild, 0);
             return false;
         }
@@ -138,6 +137,14 @@ var FunctionMap = {
             }, 0);
         }
         return true;
+    },
+    afterExtend: function () {
+        /*
+         * Check if the last line is empty line, otherwise, create new line
+         * This makes sure there always is an empty line at the end of the note
+         * TODO: maybe, a afterExtend function is needed
+         */
+        Note.ensureLastLineEmpty();
     }
 };
 

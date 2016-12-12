@@ -10,5 +10,6 @@ var Key2Function = [
     {keys: ['Shift', 'Enter'], action: 'createNewLineBelow2Go', description: 'Create a new line below the caret, and move the caret to new line'},
     {keys: ['Control', 'Enter'], action: 'createNewLineBelow', description: 'Create a new line below the caret'},
     {keys: ['Enter'], action: 'extend', description: 'Extend live template'},
+    // {keys: ['Backspace'], action: 'delete', description: '', type: 'builtin'},
     {keys: ['Tab'], action: 'tab', description: 'Insert a tab(4 spaces by default)'}
 ];
