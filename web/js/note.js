@@ -10,6 +10,9 @@
 var Note = {
     down: {},
     tabLength: 4,
+    tabString: function () {
+        return ' '.repeat(this.tabLength);
+    },
     PARAGRAPH_TYPE: HTMLDivElement,
     _statusKey: function (key) {
         return key.toLowerCase();
@@ -162,7 +165,8 @@ var Note = {
         var range = new Range();
         // set the caret
         selection.removeAllRanges();
-        range.setStart(node, offset);
+        // range.setStart(node, offset);
+        range.setStart(node.firstChild ? node.firstChild : node, offset);
         // range.setEnd(tabNode, tabString.length); // this will select from current to new range end point
         selection.addRange(range);
     },
@@ -174,54 +178,79 @@ var Note = {
         range.setEnd(end, endOffset);
         sel.addRange(range);
     },
+    /**
+     * In lower case
+     * ['enter', 'shift', 'b']
+     */
     invokedKeys: [],
     invoke: function (event) {
-        if (null == this._hashedKeyFunction) throw new Error('Map should be parsed first.');
+        try {
+            if (null == this._hashedKeyFunction) throw new Error('Map should be parsed first.');
 
-        var key = Code2Key[event.keyCode];
-        if (key) {
-            this.keyDown(key);
-        } else {
-            if (console) console.log('"' + event.keyCode + '":', '"' + event.key.replace(/^[a-z]/, function (v) {
-                    return v.toUpperCase()
-                }) + '"');
-            return true;
-        }
-
-        // Retrieve pressed keys
-        this.invokedKeys = [];
-        for (var p in this.down) {
-            if (this.down[p]) {
-                this.invokedKeys.push(p);
+            var key = Code2Key[event.keyCode];
+            if (key) {
+                this.keyDown(key);
+            } else {
+                if (console) console.log('"' + event.keyCode + '":', '"' + event.key.replace(/^[a-z]/, function (v) {
+                        return v.toUpperCase()
+                    }) + '"');
+                return true;
             }
-        }
 
-        var map = this.invokedKeys.length ? this._hashedKeyFunction[this.hashKey(this.invokedKeys)] : null;
-        if (!map) {
-            if (console && console.info) console.info('No action bound with: ' + this.invokedKeys.join('-'));
-            return true;
-        }
-
-        var action = FunctionMap[map.action];
-
-        if (action && action instanceof Function) {
-            var performDefault = action.call(FunctionMap);
-            /*
-             * action -> afterAction
-             */
-            var afterAction = FunctionMap['after' + map.action.replace(/^\w/, function (word) {
-                return word.toUpperCase();
-            })];
-            if (afterAction && afterAction instanceof Function) {
-                afterAction.call(FunctionMap);
+            // Retrieve pressed keys
+            this.invokedKeys = [];
+            for (var p in this.down) {
+                if (this.down[p]) {
+                    this.invokedKeys.push(p);
+                }
             }
-            if (!performDefault) event.preventDefault();
+
+            var map = this.invokedKeys.length ? this._hashedKeyFunction[this.hashKey(this.invokedKeys)] : null;
+            if (!map) {
+                if (console && console.info) console.info('No action bound with: ' + this.invokedKeys.join('-'));
+                return true;
+            }
+
+            var action = FunctionMap[map.action];
+
+            if (action && action instanceof Function) {
+                var performDefault = action.call(FunctionMap);
+                /*
+                 * action -> afterAction
+                 */
+                var afterAction = FunctionMap['after' + map.action.replace(/^\w/, function (word) {
+                    return word.toUpperCase();
+                })];
+                if (afterAction && afterAction instanceof Function) {
+                    afterAction.call(FunctionMap);
+                }
+                if (!performDefault) event.preventDefault();
+            }
+            return true;
+        } catch (e) {
+            // revoke all when exception occurs
+            this.revoke({keyCode: 91});
+            throw e;
         }
-        return true;
     },
-    revoke: function () {
-        this.down = {};
-        this.invokedKeys = [];
+    revoke: function (event) {
+        var self = this;
+
+        var currentKey = Code2Key[event.keyCode];
+        if (!currentKey) return false;
+
+        currentKey = currentKey.toLowerCase();
+        if (currentKey == 'meta') {
+            self.down = {};
+            self.invokedKeys = [];
+            return false;
+        }
+        ObjectHelper.each(this.invokedKeys, function (index, key) {
+            if (key == currentKey) {
+                self.keyUp(key);
+                self.invokedKeys.splice(index, 1);
+            }
+        });
     },
     /**
      * @param {null|HTMLElement}
@@ -300,68 +329,29 @@ var Note = {
             container.appendChild(this.createEmptyLine());
         }
     },
-    codeClass: function (language) {
-        var cls = "fc";
-        if (/^\s*$/.test(language)) {
-            return cls;
-        }
-        language = language.toLowerCase();
-        cls += ' ';
-        switch (language) {
-            case 'javascript':
-                cls += 'js';
-                break;
-            default:
-                cls += language;
-        }
-        return cls;
-    },
-    surroundTextNodes: function () {
-        var range = new Range();
-        range.selectNode(this._container.firstChild);
-        var sel = window.getSelection();
-
-        // Record in variable, in case it be overwritten after `range.surroundContents` called
-        var current = {
-            an: sel.anchorNode,
-            ao: sel.anchorOffset,
-            fn: sel.focusNode,
-            fo: sel.focusOffset
-        };
-
-        var line = this.createEmptyLine();
-        range.surroundContents(line);
-
-        if (current.ao != current.fo || current.an != current.fn) {
-            var r = new Range();
-            r.setStart(current.an, current.ao);
-            r.setEnd(current.fn, current.fo);
-            r.deleteContents();
-        }
-        range = new Range;
-        range.setStart(current.an, current.ao);
-        // range.setEnd(current.fn, current.fo);
-        sel.removeAllRanges();
-        sel.addRange(range);
-        return line;
-
-        var nodes = this._container.childNodes;
-        var start;
-        // abc<a>abc</a>
-        var self = this;
-        var anchorNode = getSelection().anchorNode;
-        ObjectHelper.each(nodes, function (k, node) {
-            if (ObjectHelper.instanceOf(node, Text) && !start) {
-                range.setStart(node, 0);
-                start = node;
-            }
-            if (start && (ObjectHelper.instanceOf(node, Element) || !nodes[k + 1])) {
-                range.setEnd(start, start.textContent.length);
-                range.surroundContents(self.createEmptyLine());
-                start = false;
+    extend: function (line, validations) {
+        var validationMethod, result, info;
+        var goOn = true;
+        ObjectHelper.each(validations, function (k, v) {
+            validationMethod = 'is' + v.ucfirst();
+            if (Extend[validationMethod] instanceof Function) {
+                info = Extend[validationMethod].call(line);
+                if (!info) return true;
+                console.info('Perform extend for ' + v, 'with info: ', info);
+                if (!Extend[v]) {
+                    console.error('No Extend for ' + v + '. You should have a method called such in class Extend');
+                    return true;
+                }
+                result = Extend[v].apply(line, [info]);
+                if (null !== result) {
+                    goOn = result;
+                    return false; // break the iteration
+                }
+            } else {
+                console.error('No validation method ' + validationMethod + '. You should declare a method called such in class Extend')
             }
         });
-        return self.getCurrentLine();
+        return goOn;
     }
 };
 
@@ -394,31 +384,12 @@ ObjectHelper.each({
         return ArrayHelper.in(this.nodeName, ['P', 'DIV', 'LI']);
     },
     getText: function () {
-        // return this instanceof Text ? this.textContent : this.in
         if (this instanceof Text) return this.textContent;
         if (this instanceof Element) return this.innerText;
     },
-    /**
-     * Return information about code block, if it is a code block
-     * @returns {Array|Boolean}
-     */
-    isCodeBlock: function () {
-        var match = this.getText().match(/^(\s*)`{3}(\w*)\s*$/);
-        // var match = this.innerText.match(/^(\s*)`{3}(\w*)\s*$/);
-        return match == null ? false : [match[1], match[2]];
-    },
-    isTableBlock: function () {
-        // |x|x|, the table must start and end with "|"
-        var match = this.getText().match(/^\s*(?:\|[^\|]+)+\|\s*$/g);
-        // var match = this.innerHTML.match(/^\s*(?:\|[^\|]+)+\|\s*$/g);
-        if (match instanceof Array) {
-            var cells = match[0].split('|');
-            cells.shift();
-            cells.pop();
-            return cells;
-        } else {
-            return false;
-        }
+    getHTML: function () {
+        if (this instanceof Text) return this.textContent;
+        if (this instanceof Element) return this.innerHTML;
     },
     isExtensible: function () {
         var sel = window.getSelection();
@@ -447,4 +418,14 @@ ObjectHelper.each({
     }
 }, function (k, v) {
     Node.prototype[k] = v;
+});
+
+ObjectHelper.each({
+    ucfirst: function () {
+        return this.replace(/^\w/, function (word) {
+            return word.toUpperCase();
+        })
+    }
+}, function (k, v) {
+    String.prototype[k] = v;
 });

@@ -45,17 +45,49 @@ var FunctionMap = {
          * @see https://developer.mozilla.org/en-US/docs/Web/API/Range
          * @see https://developer.mozilla.org/en-US/docs/Web/API/Selection
          */
-        var sp = ' ';
-        var tabString = sp.repeat(Note.tabLength);
+        var tabString = Note.tabString();
         var range = new Range();
         var selection = window.getSelection();
         var tabNode = document.createTextNode(tabString);
 
-        // set the selection
-        range.setStart(selection.focusNode, selection.anchorOffset);
-        range.insertNode(tabNode);
+        if (selection.isCollapsed) {
+            // set the selection
+            range.setStart(selection.focusNode, selection.anchorOffset);
+            range.insertNode(tabNode);
 
-        Note.setCaret(tabNode, tabString.length);
+            Note.setCaret(tabNode, tabString.length);
+        }
+    },
+    tabReduce: function () {
+        var line = Note.getCurrentLine();
+        var html = line.getHTML();
+        var reg = new RegExp('^(' + Note.tabString() + '){1,}');
+        if (!reg.test(html)) return false;
+
+        /**
+         * 1. collapsed
+         * 2. not-collapsed, one line
+         * 3. not-collapsed, multiple lines
+         */
+        var sel = window.getSelection();
+        if (sel.isCollapsed) {
+            // todo: type some letters "abc"
+            // todo: type tab in the very front "    abc"
+            // todo: type shift + tab to reduce tab
+            /*
+             * Clean up all the text nodes under this element
+             * (merge adjacent, remove empty)
+             */
+            line.normalize();
+            var caretNode = sel.anchorNode;
+            var caretOffset = sel.anchorOffset;
+            var spaceNode = line.firstChild;
+            var range = new Range();
+            range.setStart(spaceNode, 0);
+            range.setEnd(spaceNode, 4);
+            range.deleteContents();
+            Note.setCaret(caretNode, caretOffset > 4 ? caretOffset - 4 : 0);
+        }
     },
     /**
      * @param-internal {boolean} $return Whether to return the created line
@@ -66,13 +98,22 @@ var FunctionMap = {
         if (!currentLine) return true;
 
         var newLine = Note.createEmptyLine(currentLine.nodeName);
+        var length = Extend.isAutoIndent.apply(currentLine);
+        if (length) {
+            var text = Note.tabString().repeat(length);
+            var spaces = document.createTextNode(text);
+            newLine.prepend(spaces);
+        }
         currentLine.after(newLine);
-        if (arguments[0] === true) return newLine;
+        if (arguments[0] === true) return [newLine, length * Note.tabLength];
     },
-    createNewLineBelow2Go: function () {
-        var newLine = this.createNewLineBelow(true);
+    createNewLineBelow2Go: function (line) {
+        var data = line instanceof Node ? line : this.createNewLineBelow(true);
+        var newLine = data[0];
+        var length = data[1];
         if (newLine) {
-            Note.setCaret(newLine, 0);
+            console.log(data)
+            Note.setCaret(newLine, length ? length : 0);
         } else {
             return true;
         }
@@ -90,53 +131,29 @@ var FunctionMap = {
         }
 
         var line = Note.getCurrentLine();
-        var info;
 
         // line does not exist
-        // TODO: what to do to disable deletion for empty contain, don't delete the last <div></div>
-        // TODO: or how to wrap every line, when they come from clipboard
-        // if (!line) line = Note.surroundTextNodes();
         // return false;
         // if (!line) return true;
 
-        // empty line
+        /*
+         * When current line is empty,
+         * duplicate current line below,
+         * thus prevent arbitrary generation of line.
+         */
         if (line.isEmpty()) return this.createNewLineBelow2Go();
-        // caret in the end, and its content is bare text
+        /*
+         * Whether the line is extensible,
+         * valid enough to create `code`, `table` block.
+         * Such as,
+         * caret in the end, and its content is bare text
+         */
         if (!line.isExtensible()) return true;
 
-        // code block
-        if (info = line.isCodeBlock()) {
-            // todo: info[1] , "php" to highlight semantically
-            console.log('spaces', info[0].length, ';', 'language', info[1]);
-            var indent = parseInt(info[0].length / Note.tabLength * 2);
-            var cls = Note.codeClass(info[1]);
-            if (line instanceof Text) line = Note.surround(line);
-            line.innerHTML = '<code' + (indent ? ' style="margin-left:' + indent + 'rem"' : '') + ' class="' + cls + '"><ul><li><br></li></ul></code>';
-            // console.log(line);
-            // line.after(this.createNewLineBelow(true));
-            Note.setCaret(line.firstChild, 0);
-            return false;
-        }
-        // table block
-        if (info = line.isTableBlock()) {
-            var tag = function () {
-                return HtmlHelper.tag.apply(HtmlHelper, arguments);
-            };
-
-            var head = '';
-            var body = '';
-            for (var i = 0; i < info.length; i++) {
-                head += tag('th', info[i]);
-                body += tag('td', '<br>');
-            }
-            line.innerHTML = tag('table', tag('thead', tag('tr', head)) + tag('tbody', tag('tr', body)));
-            var firstTd = line.querySelector('tbody').querySelector('td');
-            setTimeout(function () {
-                Note.setCaret(firstTd, 0);
-                firstTd.innerHTML = '<br>';
-            }, 0);
-        }
-        return true;
+        // Register and invoke the matched extending
+        return Note.extend(line, [
+            'codeBlock', 'tableBlock', 'autoIndent', 'separator'
+        ]);
     },
     afterExtend: function () {
         /*
@@ -145,6 +162,70 @@ var FunctionMap = {
          * TODO: maybe, a afterExtend function is needed
          */
         Note.ensureLastLineEmpty();
+    },
+    Backspace: function () {
+        /**
+         * Step 1: Command + A
+         * Step 2: Backspace -> delete
+         * Step 3: ```
+         * Step 4: Enter
+         * Step 5: Backspace, to delete the code block
+         *
+         * ====
+         *
+         * delete the Elements like the inline or block code
+         */
+    },
+    /**
+     * Only valid for text node selected
+     * @return {boolean|null}
+     */
+    BackQuote: function () {
+        var sel = window.getSelection();
+        var node = sel.focusNode;
+        var caretAt = sel.focusOffset;
+        var content;
+
+        content = node.getText();
+        if (!content) {
+            if (node == Note._container) {
+                return true;
+            }
+            console.error('content is not even a {{Node}}:', node);
+        }
+
+        // CAUTION: ` is not yet in the node
+        var match = content.substring(0, caretAt).match(/(.*?)`[^`]+$/);
+        var startAt, endAt;
+        // find first ` before current one, backward
+        if (match) {
+            startAt = match[1].length;
+            endAt = caretAt;
+        }
+        // If no found before, try after
+        else {
+            match = content.substring(caretAt).match(/^[^`]+`(.*)$/);
+            if (!match) return true;
+            startAt = caretAt;
+            endAt = content.length - match[1].length;
+        }
+
+        var range = new Range();
+        range.setStart(node, startAt);
+        range.setEnd(node, endAt);
+        var code = document.createElement('code');
+        code.className = 'fc fc-inline';
+        range.surroundContents(code);
+        var codeHTML = code.innerHTML;
+        // Condition `endAt == caretAt` means: former(this first typed-in) ` is in the font
+        code.innerHTML = ''.substring.apply(codeHTML, endAt == caretAt ? [1] : [0, codeHTML.length - 1]);
+        var space = document.createTextNode(' ');
+        code.after(space);
+        Note.setCaret(space, 1);
+    },
+    ArrowLeft: function () {
+    },
+    ArrowRight: function () {
     }
 };
 

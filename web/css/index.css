@@ -49,6 +49,7 @@ ul, div, html, body {
     height: 80%;
     width: 99%;
     white-space: pre;
+    padding: 0.2rem;
 }
 
 #content-box p {
@@ -63,7 +64,11 @@ ul, div, html, body {
     display: block;
     border: 1px solid #ddd;
     padding: 0.4rem;
-    border-radius: 5px;
+    border-radius: 0.33rem;
+}
+
+#content-box code.with-badge {
+    padding-top: 1.5rem;
 }
 
 #content-box code ul {
@@ -79,4 +84,23 @@ ul, div, html, body {
 #content-box td, th {
     padding: 5px 0;
     border: 1px solid #dddddd;
+}
+
+#content-box .fc-inline {
+    display: inline-block;
+    padding: 0.2rem;
+    margin: 0 0.2rem;
+}
+
+#content-box .fs {
+    height: 1px;
+    border-bottom: 1px solid #DDD;
+}
+
+#content-box .code.badge {
+    position: absolute;
+    background: #ffc2c2;
+    padding: 0.1rem;
+    border-radius: 0.3rem 0;
+    box-shadow: 1px 1px 1px #866;
 }
