@@ -160,14 +160,21 @@ var Note = {
             return wrap;
         }
     },
+    /**
+     * - node is Text
+     *      Set caret at the Text's given offset
+     * - node is Element
+     *      Set caret at the first Text child's given offset
+     * @param {Node} node
+     * @param {int} offset The offset of the Text Node
+     */
     setCaret: function (node, offset) {
         var selection = window.getSelection();
         var range = new Range();
         // set the caret
         selection.removeAllRanges();
-        // range.setStart(node, offset);
+        node.normalize(); // To merge adjacent, remove empty
         range.setStart(node.firstChild ? node.firstChild : node, offset);
-        // range.setEnd(tabNode, tabString.length); // this will select from current to new range end point
         selection.addRange(range);
     },
     setSelected: function (begin, beginOffset, end, endOffset) {
@@ -233,6 +240,10 @@ var Note = {
             throw e;
         }
     },
+    _revokes: [],
+    registerRevoke: function (type) {
+        this._revokes.push(type);
+    },
     revoke: function (event) {
         var self = this;
 
@@ -240,6 +251,19 @@ var Note = {
         if (!currentKey) return false;
 
         currentKey = currentKey.toLowerCase();
+
+        if (this._revokes.length) {
+            ObjectHelper.each(this._revokes, function (k, v) {
+                // v[0][v]
+                // v.apply();
+                // if (v.length == 3) {
+                console.log(v);
+                v[0].apply(v[1], v[2]);
+                // }
+            });
+            this._revokes = [];
+        }
+
         if (currentKey == 'meta') {
             self.down = {};
             self.invokedKeys = [];
@@ -352,6 +376,17 @@ var Note = {
             }
         });
         return goOn;
+    },
+    caretInTheMiddle: function () {
+        var sel = window.getSelection();
+        var range = new Range();
+        // Set the range contains the whole line
+        range.selectNodeContents(this.getCurrentLine());
+        // Set the start position for the range, to minimize the range
+        // This range starts from selected anchor and offset, ends at the end of the line
+        range.setStart(sel.anchorNode, sel.anchorOffset);
+        // Check if the range contains anything
+        return range.cloneContents().textContent.length !== 0;
     }
 };
 
@@ -394,6 +429,10 @@ ObjectHelper.each({
     isExtensible: function () {
         var sel = window.getSelection();
         if (!sel.isCollapsed) return false;
+
+        return true;
+        // var length = Extend.isAutoIndent.apply(Note.getCurrentLine());
+        // if (length) return true;
         /*
          * 1. current line contains only text
          * 2. current line contains text and tags with no text (this is text<br>)

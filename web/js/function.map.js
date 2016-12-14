@@ -93,6 +93,11 @@ var FunctionMap = {
             range.setStart(spaceNode, 0);
             range.setEnd(spaceNode, 4);
             range.deleteContents();
+            /*
+             * The caret will be automatically set, unless
+             * - the spaceNode contains noting(empty string)
+             */
+            if (!spaceNode.textContent) Note.setCaret(spaceNode, 0)
         } else {
             // todo: anchor and focus is not in the same line
         }
@@ -120,7 +125,6 @@ var FunctionMap = {
         var newLine = data[0];
         var length = data[1];
         if (newLine) {
-            console.log(data)
             Note.setCaret(newLine, length ? length : 0);
         } else {
             return true;

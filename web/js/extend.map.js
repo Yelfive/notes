@@ -41,10 +41,9 @@ var Extend = {
                 info.push('JavaScript');
                 break;
             default:
-                info.push(match[2]);
+                info.push(match[2].trim());
                 break;
         }
-        console.log(info)
         return info;
     },
     codeBlock: function (info) {
@@ -61,16 +60,15 @@ var Extend = {
             var badge = document.createElement('div');
             badge.innerText = info[1];
             badge.className = 'code badge';
-            line.prepend(badge);
+            code.prepend(badge);
         }
-        Note.setCaret(code, 0);
+        Note.setCaret(code.lastChild, 0);
         return false;
     },
     /** Table Block */
     isTableBlock: function () {
         // |x|x|, the table must start and end with "|"
         var match = this.getText().match(/^\s*(?:\|[^\|]+)+\|\s*$/g);
-        // var match = this.innerHTML.match(/^\s*(?:\|[^\|]+)+\|\s*$/g);
         if (match instanceof Array) {
             var cells = match[0].split('|');
             cells.shift();
@@ -119,12 +117,28 @@ var Extend = {
         return parseInt(match[0].length / Note.tabLength);
     },
     autoIndent: function (length) {
-        var currentLine = Note.getCurrentLine();
-        var line = Note.createEmptyLine(currentLine instanceof Node ? currentLine.nodeName : undefined);
         var text = Note.tabString().repeat(length);
         var spaces = document.createTextNode(text);
-        line.prepend(spaces);
-        this.after(line);
+        var line = Note.getCurrentLine();
+        var newLine = Note.createEmptyLine(line instanceof Node ? line.nodeName : undefined);
+
+        if (Note.caretInTheMiddle()) {
+            var range = new Range();
+            var sel = window.getSelection();
+            range.selectNode(sel.anchorNode);
+            range.setStart(sel.anchorNode, sel.anchorOffset);
+            range.insertNode(spaces);
+            range.surroundContents(newLine);
+            console.log(newLine, text.length);
+            window.a=newLine
+            line.after(newLine);
+            Note.setCaret(newLine, text.length);
+            // todo: set wrapper, surround the range node
+            // Note.registerRevoke([Extend.revokeAutoIndent, this, [spaces]]);
+            return false;
+        }
+        newLine.prepend(spaces);
+        this.after(newLine);
         Note.setCaret(spaces, text.length);
         return false;
     }
