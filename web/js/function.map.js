@@ -47,15 +47,22 @@ var FunctionMap = {
          */
         var tabString = Note.tabString();
         var range = new Range();
-        var selection = window.getSelection();
+        var sel = window.getSelection();
         var tabNode = document.createTextNode(tabString);
+        var line = Note.getCurrentLine();
 
-        if (selection.isCollapsed) {
+        if (sel.isCollapsed) {
             // set the selection
-            range.setStart(selection.focusNode, selection.anchorOffset);
+            range.setStart(sel.focusNode, sel.anchorOffset);
             range.insertNode(tabNode);
-
+            // set caret, otherwise the caret will be where it is clicked
             Note.setCaret(tabNode, tabString.length);
+        }
+        // selection is not collapsed but its in the same line
+        else if (!sel.isCollapsed && line.contains(sel.anchorNode) && line.contains(sel.focusNode)) {
+            // range.setStart(line, 0);
+            // range.insertNode()
+            line.prepend(tabNode);
         }
     },
     tabReduce: function () {
@@ -70,23 +77,24 @@ var FunctionMap = {
          * 3. not-collapsed, multiple lines
          */
         var sel = window.getSelection();
-        if (sel.isCollapsed) {
-            // todo: type some letters "abc"
-            // todo: type tab in the very front "    abc"
-            // todo: type shift + tab to reduce tab
+        var isCollapsed = sel.isCollapsed;
+        if (
+            isCollapsed
+            // when the selection is not collapsed and in the same line
+            || !isCollapsed && line.contains(sel.anchorNode) && line.contains(sel.focusNode)
+        ) {
             /*
              * Clean up all the text nodes under this element
              * (merge adjacent, remove empty)
              */
             line.normalize();
-            var caretNode = sel.anchorNode;
-            var caretOffset = sel.anchorOffset;
-            var spaceNode = line.firstChild;
+            var spaceNode = line instanceof Text ? line : line.firstChild;
             var range = new Range();
             range.setStart(spaceNode, 0);
             range.setEnd(spaceNode, 4);
             range.deleteContents();
-            Note.setCaret(caretNode, caretOffset > 4 ? caretOffset - 4 : 0);
+        } else {
+            // todo: anchor and focus is not in the same line
         }
     },
     /**
@@ -188,9 +196,7 @@ var FunctionMap = {
 
         content = node.getText();
         if (!content) {
-            if (node == Note._container) {
-                return true;
-            }
+            if (node === Note._container) return true;
             console.error('content is not even a {{Node}}:', node);
         }
 
