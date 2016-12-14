@@ -349,8 +349,16 @@ var Note = {
     ensureLastLineEmpty: function () {
         var container = this._container;
         var lastLine = container.lastChild;
+        var tagName;
+        if (lastLine instanceof HTMLUListElement) {
+            container = lastLine;
+            lastLine = container.lastChild;
+            tagName = 'LI';
+        } else {
+            tagName = 'div';
+        }
         if (!lastLine || !lastLine.isEmpty()) {
-            container.appendChild(this.createEmptyLine());
+            container.appendChild(this.createEmptyLine(tagName));
         }
     },
     extend: function (line, validations) {
