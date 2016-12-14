@@ -1,2 +1,10 @@
 - how to deal with paste HTML, to be compatible with my Note
 - Alt+Shift + Arrow* to move line(s)
+- table
+    - create new row
+    - create new column
+    - delete one row
+    - delete one column
+- "-" to render a list
+- category
+    - multiple

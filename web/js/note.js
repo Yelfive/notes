@@ -151,7 +151,7 @@ var Note = {
         }
         this.setSelected(begin, beginOffset, end, endOffset);
     },
-    surround: function (text) {
+    wrapWithLine: function (text) {
         if (text instanceof Node) {
             var wrap = this.createEmptyLine();
             var range = new Range();
