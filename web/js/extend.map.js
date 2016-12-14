@@ -119,27 +119,28 @@ var Extend = {
     autoIndent: function (length) {
         var text = Note.tabString().repeat(length);
         var spaces = document.createTextNode(text);
-        var line = Note.getCurrentLine();
-        var newLine = Note.createEmptyLine(line instanceof Node ? line.nodeName : undefined);
 
         if (Note.caretInTheMiddle()) {
             var range = new Range();
             var sel = window.getSelection();
-            range.selectNode(sel.anchorNode);
+            range.selectNode(this);
             range.setStart(sel.anchorNode, sel.anchorOffset);
             range.insertNode(spaces);
-            range.surroundContents(newLine);
-            console.log(newLine, text.length);
-            window.a=newLine
-            line.after(newLine);
-            Note.setCaret(newLine, text.length);
-            // todo: set wrapper, surround the range node
-            // Note.registerRevoke([Extend.revokeAutoIndent, this, [spaces]]);
-            return false;
+            // Move the DocumentFragment from range to variable
+            var fragment =range.extractContents();
+            this.after(fragment);
+            // The fragment becomes a node after being inserted
+            // Since the fragment ends with </li>, it will be automatically prepend <li> after inserted
+            Note.setCaret(this.nextSibling, text.length);
+            // Detach for performance reason
+            range.detach();
+        } else {
+            var newLine = Note.createEmptyLine(this instanceof Node ? this.nodeName : undefined);
+            newLine.prepend(spaces);
+            this.after(newLine);
+            Note.setCaret(spaces, text.length);
+
         }
-        newLine.prepend(spaces);
-        this.after(newLine);
-        Note.setCaret(spaces, text.length);
         return false;
     }
 };

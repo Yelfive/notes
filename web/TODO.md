@@ -5,6 +5,15 @@
     - create new column
     - delete one row
     - delete one column
+    - table with indent: table may be sub block of a line
 - "-" to render a list
 - category
     - multiple
+- Ctrl + E to delete
+    - One line
+    - Multiple lines
+- Ctrl + D to duplicate
+    - One line
+    - Multiple lines
+- Ctrl + Z to undo
+- Ctrl + Y to redo
