@@ -195,6 +195,11 @@ var Note = {
             if (null == this._hashedKeyFunction) throw new Error('Map should be parsed first.');
 
             var key = Code2Key[event.keyCode];
+            // Key of "Meta" on Mac will result problem
+            // `Meta + B` will not trigger B keyup when up, e.t.c
+            if (key == 'Meta') {
+                return true;
+            }
             if (key) {
                 this.keyDown(key);
             } else {

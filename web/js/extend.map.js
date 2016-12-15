@@ -139,7 +139,6 @@ var Extend = {
             newLine.prepend(spaces);
             this.after(newLine);
             Note.setCaret(spaces, text.length);
-
         }
         return false;
     }
