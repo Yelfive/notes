@@ -17,3 +17,6 @@
     - Multiple lines
 - Ctrl + Z to undo
 - Ctrl + Y to redo
+- \>>> To represent a block quote
+- Ctrl + A to select all
+- images and links(&lt;a>&lt;/a>)

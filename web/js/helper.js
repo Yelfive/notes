@@ -69,6 +69,13 @@ var ObjectHelper = {
     },
     instanceOf: function (object, className) {
         return object instanceof className;
+    },
+    flip: function (map) {
+        var _;
+        this.each(map, function (k, v) {
+            _[v] = k;
+        });
+        return _;
     }
 };
 

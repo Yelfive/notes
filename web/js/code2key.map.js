@@ -1,38 +1,63 @@
+/**
+ * Display only
+ * This file is used for user reason to set hot key map friendly
+ * e.g.
+ *  `Control + Shift + U` to set selection to upper case
+ */
 var Code2Key = {
-    "9": "Tab",
-    "16": "Shift",
-    "17": "Control",
-    "18": "Alt",
-    "20": "CapsLock",
-    "91": "Meta", // Meta left
-    "93": "Meta", // Meta right
-    "65": "A",
-    "66": "B",
-    "67": "C",
-    "68": "D",
-    "69": "E",
-    "70": "F",
-    "71": "G",
-    "72": "H",
-    "73": "I",
-    "74": "J",
-    "75": "K",
-    "76": "L",
-    "77": "M",
-    "78": "N",
-    "79": "O",
-    "80": "P",
-    "81": "Q",
-    "82": "R",
-    "83": "S",
-    "84": "T",
-    "85": "U",
-    "86": "V",
-    "87": "W",
-    "88": "X",
-    "89": "Y",
-    "90": "Z",
+    "Tab": CODE.TAB,
+    "Shift": CODE.SHIFT,
+    "Control": CODE.CONTROL,
+    "Alt": CODE.ALT,
+    "CapsLock": CODE.CAPS_LOCK,
+    // "Meta": CODE.Meta, // Meta left
+    // "Meta": CODE.Meta, // Meta right
+    "A": CODE.A,
+    "B": CODE.B,
+    "C": CODE.C,
+    "D": CODE.D,
+    "E": CODE.E,
+    "F": CODE.F,
+    "G": CODE.G,
+    "H": CODE.H,
+    "I": CODE.I,
+    "J": CODE.J,
+    "K": CODE.K,
+    "L": CODE.L,
+    "M": CODE.M,
+    "N": CODE.N,
+    "O": CODE.O,
+    "P": CODE.P,
+    "Q": CODE.Q,
+    "R": CODE.R,
+    "S": CODE.S,
+    "T": CODE.T,
+    "U": CODE.U,
+    "V": CODE.V,
+    "W": CODE.W,
+    "X": CODE.X,
+    "Y": CODE.Y,
+    "Z": CODE.Z,
 
-    "13": "Enter",
-    "192": "BackQuote"
+    "Enter": CODE.ENTER,
+    "BackQuote": CODE.BACK_QUOTE,
+
+    // "Arrow": [CODE.ARROW_LEFT, CODE.ARROW_UP, CODE.ARROW_RIGHT, CODE.ARROW_DOWN]
+    "Arrow": CODE.ARROW
 };
+
+// flip the object
+(function () {
+    var k, v, _ = {};
+    for (k in Code2Key) {
+        v = Code2Key[k];
+        if (v instanceof Array) {
+            for (var i in v) {
+                _[v[i]] = k;
+            }
+        } else {
+            _[v] = k;
+        }
+    }
+    Code2Key = _;
+})();

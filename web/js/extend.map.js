@@ -120,7 +120,7 @@ var Extend = {
         var text = Note.tabString().repeat(length);
         var spaces = document.createTextNode(text);
 
-        if (Note.caretInTheMiddle()) {
+        if (Caret.inTheMiddle()) {
             var range = new Range();
             var sel = window.getSelection();
             range.selectNode(this);

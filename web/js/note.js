@@ -15,33 +15,43 @@ var Note = {
     },
     PARAGRAPH_TYPE: HTMLDivElement,
     _statusKey: function (key) {
+        return key;
         return key.toLowerCase();
     },
     keyDown: function (key) {
+        key = this.codeAliases[key] || key;
         this.down[this._statusKey(key)] = true;
     },
     keyUp: function (key) {
+        key = this.codeAliases[key] || key;
         this.down[this._statusKey(key)] = false;
     },
-    isKeyDown: function (key) {
-        return this.down[this._statusKey(key)] == true;
-    },
+    // isKeyDown: function (key) {
+    //     return this.down[this._statusKey(key)] == true;
+    // },
+    /**
+     * code => alias
+     */
+    codeAliases: (function () {
+        var map = {};
+        map[CODE.ARROW_LEFT] = CODE.ARROW;
+        map[CODE.ARROW_UP] = CODE.ARROW;
+        map[CODE.ARROW_RIGHT] = CODE.ARROW;
+        map[CODE.ARROW_DOWN] = CODE.ARROW;
+        return map;
+    })(),
     _hashedKeyFunction: null,
     hashKey: function (keys) {
-        var sorted = keys.sort();
-        ObjectHelper.each(sorted, function (k, v) {
-            sorted[k] = v.toLowerCase();
-        });
-        return sorted.join('-');
+        return keys.sort().join('-');
     },
     init: function (options) {
         // Set container
         this.container(options.container);
-        // Parse map
-        this.parseMap(options.keyMap);
+        // Parse function map
+        this.parseHotKeys(options.keyMap);
         // Insert a initial line
         this.firstLine();
-
+        // Check if necessary configure is set
         this.validate();
     },
     firstLine: function () {
@@ -59,12 +69,16 @@ var Note = {
         node.appendChild(document.createElement('br'));
         return node;
     },
-    parseMap: function (map) {
+    parseHotKeys: function (map) {
         var self = this;
         self._hashedKeyFunction = {};
         ObjectHelper.each(map, function (k, v) {
             if (v.keys instanceof Array) {
-                self._hashedKeyFunction[self.hashKey(v.keys)] = {action: v.action, description: v.description};
+                self._hashedKeyFunction[self.hashKey(v.code)] = {
+                    keys: v.keys,
+                    action: v.action,
+                    description: v.description
+                };
             } else {
                 throw new Error('Key map should contain an array value for key called "keys"');
             }
@@ -183,7 +197,20 @@ var Note = {
         var range = new window.Range();
         range.setStart(begin, beginOffset);
         range.setEnd(end, endOffset);
+        /*
+         * 1: `begin` is the same as `end`, but beginOffset > endOffset
+         * 2: `end` is ahead of `begin`
+         */
+        if (range.collapsed === true) {
+            range.setStart(end, endOffset);
+            range.setEnd(begin, beginOffset);
+        }
         sel.addRange(range);
+        range.detach();
+    },
+    createTabNode: function () {
+        var tabString = Note.tabString();
+        return document.createTextNode(tabString);
     },
     /**
      * In lower case
@@ -191,17 +218,23 @@ var Note = {
      */
     invokedKeys: [],
     invoke: function (event) {
+        if (++UndoManager.keyDownCount > UndoManager.keyDownInterval) {
+            UndoManager.keyDownCount = 0;
+            this.overwrite();
+        }
+        if (ArrayHelper.in(event.keyCode, [229])) {
+            return true;
+        }
         try {
-            if (null == this._hashedKeyFunction) throw new Error('Map should be parsed first.');
-
-            var key = Code2Key[event.keyCode];
+            var code = event.keyCode;
+            // var key = Code2Key[event.keyCode];
             // Key of "Meta" on Mac will result problem
             // `Meta + B` will not trigger B keyup when up, e.t.c
-            if (key == 'Meta') {
-                return true;
+            if (code == CODE.META_LEFT || code == CODE.META_RIGHT) {
+                return false;
             }
-            if (key) {
-                this.keyDown(key);
+            if (code) {
+                this.keyDown(code);
             } else {
                 if (console) console.log('"' + event.keyCode + '":', '"' + event.key.replace(/^[a-z]/, function (v) {
                         return v.toUpperCase()
@@ -213,69 +246,64 @@ var Note = {
             this.invokedKeys = [];
             for (var p in this.down) {
                 if (this.down[p]) {
-                    this.invokedKeys.push(p);
+                    this.invokedKeys.push(parseInt(p));
                 }
             }
 
             var map = this.invokedKeys.length ? this._hashedKeyFunction[this.hashKey(this.invokedKeys)] : null;
             if (!map) {
-                if (console && console.info) console.info('No action bound with: ' + this.invokedKeys.join('-'));
+                if (console && console.info) {
+                    (function () {
+                        var _ = [];
+                        for (var i in Note.invokedKeys) {
+                            _.push(Code2Key[Note.invokedKeys[i]] || Note.invokedKeys[i]);
+                        }
+                        _.sort(function (v1, v2) {
+                            var fn = ['Control', 'Alt', 'Shift'];
+                            if (ArrayHelper.in(v1, fn)) {
+                                return -1;
+                            } else if (ArrayHelper.in(v2, fn)) {
+                                return 1;
+                            }
+                        });
+                        console.info('No action bound with: ' + _.join(' + '));
+                    })();
+                }
                 return true;
             }
 
             var action = FunctionMap[map.action];
 
             if (action && action instanceof Function) {
-                var performDefault = action.call(FunctionMap);
+                var performDefault = action.call(FunctionMap, event);
                 /*
                  * action -> afterAction
                  */
-                var afterAction = FunctionMap['after' + map.action.replace(/^\w/, function (word) {
-                    return word.toUpperCase();
-                })];
-                if (afterAction && afterAction instanceof Function) {
-                    afterAction.call(FunctionMap);
-                }
+                var afterAction = FunctionMap['after' + map.action.ucfirst()];
+                if (afterAction && afterAction instanceof Function) afterAction.call(FunctionMap);
                 if (!performDefault) event.preventDefault();
             }
             return true;
         } catch (e) {
             // revoke all when exception occurs
-            this.revoke({keyCode: 91});
+            this.revoke({keyCode: CODE.META_LEFT});
             throw e;
         }
-    },
-    _revokes: [],
-    registerRevoke: function (type) {
-        this._revokes.push(type);
     },
     revoke: function (event) {
         var self = this;
 
-        var currentKey = Code2Key[event.keyCode];
-        if (!currentKey) return false;
+        var currentCode = event.keyCode;
 
-        currentKey = currentKey.toLowerCase();
+        currentCode = this.codeAliases[currentCode] || currentCode;
 
-        if (this._revokes.length) {
-            ObjectHelper.each(this._revokes, function (k, v) {
-                // v[0][v]
-                // v.apply();
-                // if (v.length == 3) {
-                console.log(v);
-                v[0].apply(v[1], v[2]);
-                // }
-            });
-            this._revokes = [];
-        }
-
-        if (currentKey == 'meta') {
+        if (currentCode == CODE.META_LEFT || currentCode == CODE.META_RIGHT) {
             self.down = {};
             self.invokedKeys = [];
             return false;
         }
         ObjectHelper.each(this.invokedKeys, function (index, key) {
-            if (key == currentKey) {
+            if (key == currentCode) {
                 self.keyUp(key);
                 self.invokedKeys.splice(index, 1);
             }
@@ -302,6 +330,7 @@ var Note = {
      */
     validate: function () {
         if (!this._container) throw new Error('Call Note.container(selector) to set the container for the editor.');
+        if (null == this._hashedKeyFunction) throw new Error('Map should be parsed first.');
     },
     /**
      * Find first block parent element
@@ -390,16 +419,126 @@ var Note = {
         });
         return goOn;
     },
-    caretInTheMiddle: function () {
-        var sel = window.getSelection();
-        var range = new Range();
-        // Set the range contains the whole line
-        range.selectNodeContents(this.getCurrentLine());
-        // Set the start position for the range, to minimize the range
-        // This range starts from selected anchor and offset, ends at the end of the line
-        range.setStart(sel.anchorNode, sel.anchorOffset);
-        // Check if the range contains anything
-        return range.cloneContents().textContent.length !== 0;
+    /**
+     * @param {HTMLTableCellElement} cell
+     * @returns {Boolean|HTMLTableCellElement|Node}
+     */
+    findPreviousCell: function (cell) {
+        // Try previous cell <td>
+        var node = cell.previousElementSibling;
+        if (node) return node;
+
+        // Try last cell of previous row <tr>;
+        var currentRow = cell.parentNode;
+        var previousRow = currentRow.previousElementSibling;
+        if (previousRow) return previousRow.lastElementChild;
+
+        // No previous row found
+        // Check if a head row exists(current row belongs table body)
+        var currentTablePart = currentRow.parentNode;
+        var previousTablePart;
+        switch (currentTablePart.nodeName) {
+            case 'TFOOT':
+                previousTablePart = currentTablePart.parentNode.getElementsByTagName('tbody')[0];
+                // If the table body does not exist, try get the head instead
+                if (previousTablePart) break;
+            case 'TBODY':
+                previousTablePart = currentTablePart.parentNode.getElementsByTagName('thead')[0];
+                break;
+            default:
+                return false;
+        }
+        if (!previousTablePart) return false;
+
+        previousRow = previousTablePart.lastElementChild;
+
+        return previousRow ? previousRow.lastElementChild : false;
+
+    },
+    /**
+     * @param {HTMLTableCellElement} cell
+     * @returns {Boolean|HTMLTableCellElement|Node}
+     */
+    findNextCell: function (cell) {
+        // Try previous cell <td>
+        var node = cell.nextElementSibling;
+        if (node) return node;
+
+        // Try last cell of previous row <tr>;
+        var currentRow = cell.parentNode;
+        var nextRow = currentRow.nextElementSibling;
+        if (nextRow) return nextRow.firstElementChild;
+
+        // No previous row found
+        // Check if a head row exists(current row belongs table body)
+        var currentTablePart = currentRow.parentNode;
+        var previousTablePart;
+        switch (currentTablePart.nodeName) {
+            case 'THEAD':
+                previousTablePart = currentTablePart.parentNode.getElementsByTagName('tbody')[0];
+                // If the table body does not exist, try get the head instead
+                if (previousTablePart) break;
+            case 'TBODY':
+                previousTablePart = currentTablePart.parentNode.getElementsByTagName('tfoot')[0];
+                break;
+            default:
+                return false;
+        }
+        if (!previousTablePart) return false;
+
+        nextRow = previousTablePart.firstElementChild;
+
+        return nextRow ? nextRow.firstElementChild : false;
+    },
+    findSiblingCell: function (cell, direction) {
+        var sibling, child;
+        switch (direction) {
+            case 'next':
+                sibling = 'nextElementSibling';
+                child = 'firstElementChild';
+                break;
+            case 'prev':
+                sibling = 'previousElementSibling';
+                child = 'lastElementChild';
+                break;
+            default:
+                throw new Error('Parameter direction should be either next or prev');
+        }
+        // Try previous cell <td>
+        var node = cell[sibling];
+        if (node) return node;
+
+        // Try last cell of previous row <tr>;
+        var currentRow = cell.parentNode;
+        var siblingRow = currentRow[sibling];
+        if (siblingRow) return siblingRow[child];
+
+        // No previous row found
+        // Check if a head row exists(current row belongs table body)
+        var currentTablePart = currentRow.parentNode;
+        var siblingTablePart = false;
+        switch (currentTablePart.nodeName) {
+            case 'THEAD':
+                if (direction == 'prev') return false;
+                siblingTablePart = currentTablePart.parentNode.getElementsByTagName('tbody')[0];
+                if (siblingTablePart) break;
+            case 'TFOOT':
+                if (siblingTablePart !== false) break;
+                if (direction == 'next') return false;
+                siblingTablePart = currentTablePart.parentNode.getElementsByTagName('tbody')[0];
+                // If the table body does not exist, try get the head instead
+                if (siblingTablePart) break;
+            case 'TBODY':
+                siblingTablePart = currentTablePart.parentNode.getElementsByTagName(direction == 'prev' ? 'thead' : 'tfoot')[0];
+                break;
+            default:
+                return false;
+        }
+        if (!siblingTablePart) return false;
+
+        siblingRow = siblingTablePart[child];
+
+        return siblingRow ? siblingRow[child] : false;
     }
 };
 

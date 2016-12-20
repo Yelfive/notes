@@ -45,25 +45,49 @@ var FunctionMap = {
          * @see https://developer.mozilla.org/en-US/docs/Web/API/Range
          * @see https://developer.mozilla.org/en-US/docs/Web/API/Selection
          */
-        var tabString = Note.tabString();
-        var range = new Range();
         var sel = window.getSelection();
-        var tabNode = document.createTextNode(tabString);
         var line = Note.getCurrentLine();
 
+        /* tab object to remember the tab being performed */
+        var tab = Note.createTabNode();
         if (sel.isCollapsed) {
-            // set the selection
-            range.setStart(sel.focusNode, sel.anchorOffset);
-            range.insertNode(tabNode);
-            // set caret, otherwise the caret will be where it is clicked
-            Note.setCaret(tabNode, tabString.length);
+            UndoManager.transact({
+                redo: function () {
+                    document.execCommand('insertText', false, tab.textContent);
+                }
+            });
         }
         // selection is not collapsed but its in the same line
         else if (!sel.isCollapsed && line.contains(sel.anchorNode) && line.contains(sel.focusNode)) {
-            // range.setStart(line, 0);
-            // range.insertNode()
-            line.prepend(tabNode);
+            /**
+             * TODO
+             * it cannot remember the tabNode
+             * if undo is performed, the tabNode inserted won't get undone
+             * however, the modification before the inserting will get undone
+             * It will not remember the tabNode at all, as if it didn't happen
+             // line.prepend(tabNode);
+             */
+            UndoManager.transact({
+                redo: function () {
+                    if (!tab.textContent) tab = Note.createTabNode();
+                    line.prepend(tab);
+                },
+                undo: function () {
+                    var r = new Range();
+                    r.setStart(tab, 0);
+                    r.setEnd(tab, tab.textContent.length);
+                    r.deleteContents();
+                    r.detach();
+                }
+            });
         }
+    },
+    undo: function () {
+        // document.execCommand('undo');
+        window.UndoManager.undo();
+    },
+    redo: function () {
+        window.UndoManager.redo();
     },
     tabReduce: function () {
         var line = Note.getCurrentLine();
@@ -104,7 +128,7 @@ var FunctionMap = {
     },
     /**
      * @param-internal {boolean} $return Whether to return the created line
-     * @returns {*}
+     * @returns {Array|Boolean}
      */
     createNewLineBelow: function () {
         var currentLine = Note.getCurrentLine();
@@ -138,7 +162,7 @@ var FunctionMap = {
     },
     extend: function () {
         // In case not only "Enter" is pressed
-        if (Note.invokedKeys.length !== 1 || Note.invokedKeys[0] !== 'enter') {
+        if (Note.invokedKeys.length !== 1 || Note.invokedKeys[0] !== CODE.ENTER) {
             return true;
         }
 
@@ -165,6 +189,7 @@ var FunctionMap = {
         // Register and invoke the matched extending
         return Note.extend(line, [
             'codeBlock', 'tableBlock', 'autoIndent', 'separator'
+            // TODO: add extend check, table cell, enter in table cell multiple times
         ]);
     },
     afterExtend: function () {
@@ -233,9 +258,32 @@ var FunctionMap = {
         code.after(space);
         Note.setCaret(space, 1);
     },
-    ArrowLeft: function () {
-    },
-    ArrowRight: function () {
+    /**
+     * 1. check if in table cell
+     * 2. check if at the end of the cell
+     * 3. check if the last cell of the row
+     */
+    tableActions: function (event) {
+        var cell = Caret.inTableCell();
+        if (false == cell) return true;
+
+        var code = event.keyCode;
+        var node, offset = 0; // [node, offset]
+        switch (code) {
+            case CODE.ARROW_LEFT:
+                node = Note.findSiblingCell(cell, 'prev');
+                break;
+            case  CODE.ARROW_UP:
+                break;
+            case CODE.ARROW_RIGHT:
+                node = Note.findSiblingCell(cell, 'next');
+                break;
+        }
+        if (!node) {
+            console.error('no dst caret node', cell);
+            return false;
+        }
+        Note.setCaret(node, offset);
     }
 };
 
