@@ -4,6 +4,13 @@
 
 'use strict';
 
+/**
+ *
+ * @type {{save: FunctionMap.save, tab: FunctionMap.tab, undo: FunctionMap.undo, redo: FunctionMap.redo, tabReduce: FunctionMap.tabReduce, createNewLineBelow: FunctionMap.createNewLineBelow, createNewLineBelow2Go: FunctionMap.createNewLineBelow2Go, toUpper: FunctionMap.toUpper, toLower: FunctionMap.toLower, extend: FunctionMap.extend, afterExtend: FunctionMap.afterExtend, Backspace: FunctionMap.Backspace, BackQuote: FunctionMap.BackQuote, tableActions: FunctionMap.tableActions}}
+ * @return
+ *  - empty to prevent default event
+ *  - non-empty to go on default event
+ */
 var FunctionMap = {
     save: function () {
         var $id = $('#note-id');
@@ -51,11 +58,12 @@ var FunctionMap = {
         /* tab object to remember the tab being performed */
         var tab = Note.createTabNode();
         if (sel.isCollapsed) {
-            UndoManager.transact({
-                redo: function () {
+            // UndoManager.transact({
+            //     redo: function () {
                     document.execCommand('insertText', false, tab.textContent);
-                }
-            });
+            UndoManager.transact();
+            //     }
+            // });
         }
         // selection is not collapsed but its in the same line
         else if (!sel.isCollapsed && line.contains(sel.anchorNode) && line.contains(sel.focusNode)) {
@@ -67,19 +75,20 @@ var FunctionMap = {
              * It will not remember the tabNode at all, as if it didn't happen
              // line.prepend(tabNode);
              */
-            UndoManager.transact({
-                redo: function () {
-                    if (!tab.textContent) tab = Note.createTabNode();
+            // UndoManager.transact({
+            //     redo: function () {
+                    // if (!tab.textContent) tab = Note.createTabNode();
                     line.prepend(tab);
-                },
-                undo: function () {
-                    var r = new Range();
-                    r.setStart(tab, 0);
-                    r.setEnd(tab, tab.textContent.length);
-                    r.deleteContents();
-                    r.detach();
-                }
-            });
+            UndoManager.transact();
+                // },
+                // undo: function () {
+                //     var r = new Range();
+                //     r.setStart(tab, 0);
+                //     r.setEnd(tab, tab.textContent.length);
+                //     r.deleteContents();
+                //     r.detach();
+                // }
+            // });
         }
     },
     undo: function () {

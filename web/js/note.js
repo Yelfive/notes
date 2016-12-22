@@ -16,7 +16,6 @@ var Note = {
     PARAGRAPH_TYPE: HTMLDivElement,
     _statusKey: function (key) {
         return key;
-        return key.toLowerCase();
     },
     keyDown: function (key) {
         key = this.codeAliases[key] || key;
@@ -26,9 +25,9 @@ var Note = {
         key = this.codeAliases[key] || key;
         this.down[this._statusKey(key)] = false;
     },
-    // isKeyDown: function (key) {
-    //     return this.down[this._statusKey(key)] == true;
-    // },
+    isKeyDown: function (key) {
+        return this.down[this._statusKey(key)] == true;
+    },
     /**
      * code => alias
      */
@@ -174,6 +173,12 @@ var Note = {
             return wrap;
         }
     },
+    findLastChildTextNode: function (node) {
+        var child = node;
+        if (child instanceof Text) return child;
+
+        return this.findLastChildTextNode(child.lastChild);
+    },
     /**
      * - node is Text
      *      Set caret at the Text's given offset
@@ -185,15 +190,21 @@ var Note = {
     setCaret: function (node, offset) {
         var selection = window.getSelection();
         var range = new Range();
+        var start;
+        if (offset < 0) { // place the caret at the end of the node
+            start = this.findLastChildTextNode(node);
+            offset = start.textContent.length;
+        } else {
+            start = node.firstChild ? node.firstChild : node;
+        }
         // set the caret
         selection.removeAllRanges();
         node.normalize(); // To merge adjacent, remove empty
-        range.setStart(node.firstChild ? node.firstChild : node, offset);
+        range.setStart(start, offset);
         selection.addRange(range);
     },
     setSelected: function (begin, beginOffset, end, endOffset) {
         var sel = getSelection();
-        sel.removeAllRanges();
         var range = new window.Range();
         range.setStart(begin, beginOffset);
         range.setEnd(end, endOffset);
@@ -201,10 +212,11 @@ var Note = {
          * 1: `begin` is the same as `end`, but beginOffset > endOffset
          * 2: `end` is ahead of `begin`
          */
-        if (range.collapsed === true) {
+        if (range.collapsed) {
             range.setStart(end, endOffset);
             range.setEnd(begin, beginOffset);
         }
+        sel.removeAllRanges();
         sel.addRange(range);
         range.detach();
     },
@@ -212,33 +224,78 @@ var Note = {
         var tabString = Note.tabString();
         return document.createTextNode(tabString);
     },
+    fnKeys: [CODE.ALT, CODE.CONTROL, CODE.SHIFT],
+    isCommonKey: function (code) {
+        return !ArrayHelper.in(code, this.fnKeys) && !ArrayHelper.in(code, [
+                CODE.ENTER, CODE.BACKSPACE, CODE.TAB, CODE.BACK_QUOTE,
+                CODE.ARROW_LEFT, CODE.ARROW_UP, CODE.ARROW_RIGHT, CODE.ARROW_DOWN
+            ]);
+    },
+    isCharacterKey: function (code) {
+        return code >= CODE.A && code <= CODE.Z;
+    },
+    sinceFunctionalKeyDown: function () {
+        var down = false;
+        ObjectHelper.each(this.fnKeys, function (k, v) {
+            if (Note.isKeyDown(v)) {
+                down = true;
+                return false;
+            }
+        });
+        return down;
+    },
     /**
      * In lower case
      * ['enter', 'shift', 'b']
      */
     invokedKeys: [],
     invoke: function (event) {
-        if (++UndoManager.keyDownCount > UndoManager.keyDownInterval) {
-            UndoManager.keyDownCount = 0;
-            this.overwrite();
-        }
-        if (ArrayHelper.in(event.keyCode, [229])) {
-            return true;
-        }
+        // if (++UndoManager.keyDownCount > UndoManager.keyDownInterval && this.invokedKeys.length === 0) {
+        // UndoManager.keyDownCount = 0;
+        // UndoManager.overwrite(event);
+        // }
+        // // 229: type with chinese input, [a-z] and space will trigger event with code 229
+        // if (ArrayHelper.in(event.keyCode, [229])) {
+        //     return true;
+        // }
         try {
             var code = event.keyCode;
-            // var key = Code2Key[event.keyCode];
+            // TODO:
             // Key of "Meta" on Mac will result problem
             // `Meta + B` will not trigger B keyup when up, e.t.c
             if (code == CODE.META_LEFT || code == CODE.META_RIGHT) {
                 return false;
             }
+            if (
+                this.isCommonKey(code) && (this.isKeyDown(CODE.SHIFT) || !this.sinceFunctionalKeyDown())
+                || code == CODE.BACKSPACE
+            ) {
+                UndoManager.overwrite(code);
+                return true;
+            }
+            // if common key is pressed, but no functional key is, then, do some UndoManager.rewrite thing
+            /*
+             if (this.isCommonKey(code) && (this.isKeyDown(CODE.SHIFT) || !this.sinceFunctionalKeyDown())) {
+             // 1. write in content box
+             // 2. UndoManager.overwrite
+             return true;
+             var key = Code2Key[code];
+             if (!key) {
+             // todo: problem, cannot tell exactly when a punctuation is typed, what language the punctuation is in
+             // todo: such as, difference between chinese and english period
+             console.error('No key found in Code2Key, code', code, 'event.key:', "'" + event.key + "'");
+             return true;
+             } else if (!this.isKeyDown(CODE.SHIFT)) {
+             key = key.toLowerCase();
+             document.execCommand('insertText', false, key);
+             }
+             return false;
+             }
+             */
             if (code) {
                 this.keyDown(code);
             } else {
-                if (console) console.log('"' + event.keyCode + '":', '"' + event.key.replace(/^[a-z]/, function (v) {
-                        return v.toUpperCase()
-                    }) + '"');
+                if (console) console.log('"' + event.keyCode + '":', '"' + event.key.ucfirst() + '"');
                 return true;
             }
 
@@ -323,6 +380,8 @@ var Note = {
             case '#':
                 this._container = document.getElementById(selector.substr(1));
         }
+        // Set UndoManager container
+        UndoManager.init({transact: true, container: this._container});
         return this;
     },
     /**
@@ -569,6 +628,9 @@ ObjectHelper.each({
      */
     isLine: function () {
         return ArrayHelper.in(this.nodeName, ['P', 'DIV', 'LI']);
+    },
+    isStrictLine: function () {
+        return this.parentNode === this._container;
     },
     getText: function () {
         if (this instanceof Text) return this.textContent;

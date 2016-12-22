@@ -7,6 +7,66 @@
  * 1. how to undo character typing
  */
 (function () {
+
+    function Stack(container) {
+        this.html = container.innerHTML;
+
+        // Caret information
+        var sel = window.getSelection();
+        var caret;
+        if (sel.anchorNode) {
+            caret = {focusPath: [], collapsed: sel.isCollapsed};
+            if (sel.isCollapsed === false) {
+                caret.anchorPath = [];
+                caret.anchorOffset = sel.anchorOffset;
+                getCaretPath(sel.anchorNode, caret.anchorPath);
+            }
+            caret.focusOffset = sel.focusOffset;
+            getCaretPath(sel.focusNode, caret.focusPath);
+        } else {
+            caret = null;
+        }
+        this.caret = caret;
+
+
+        this.setCaret = function () {
+            if (!caret) return this;
+            if (caret.collapsed) {
+                Note.setCaret(findNodeByPath(caret.focusPath), caret.focusOffset);
+            } else {
+                Note.setSelected(
+                    findNodeByPath(caret.anchorPath), caret.anchorOffset,
+                    findNodeByPath(caret.focusPath), caret.focusOffset
+                );
+            }
+            return this;
+        };
+        this.setHTML = function () {
+            container.innerHTML = this.html;
+            return this;
+        };
+
+        function findNodeByPath(path) {
+            var i, node = container;
+            for (i = 0; i < path.length; i++) {
+                node = node.childNodes[path[i]];
+            }
+            return node;
+        }
+
+        function getCaretPath(node, path) {
+            if (path instanceof Array) {
+                if (container !== node && container.contains(node)) {
+                    var index = [].indexOf.call(node.parentNode.childNodes, node);
+                    path.unshift(index);
+                    getCaretPath(node.parentNode, path);
+                }
+            } else {
+                throw new Error('Parameter path should be an array');
+            }
+        }
+    }
+
     /**
      * xxx -> undo
      * /// -> redo
@@ -30,13 +90,17 @@
      */
     function UndoManger() {
 
-        var stack = [{}];
+        var stack = [];
+        stack.recover = function (position) {
+            var stack = this[position];
+            if (stack) stack.setHTML().setCaret();
+        };
         /**
          * + `-1` No undo should be performed
          * + `stack.length` No redo should be performed
          * @type {number}
          */
-        var position = 0; // -1: no undo should be performed, position=length: no redo should be performed
+        var position = -1; // -1: no undo should be performed, position=length: no redo should be performed
         var length = 0;
 
         // Object.defineProperties(this, {
@@ -57,59 +121,74 @@
         //     }
         // });
 
-        var getStack = function (position) {
-            return stack[position] || false;
+        this.container = null;
+
+        var maxLength = 50;
+        this.init = function (options) {
+            if (options.container) this.container = options.container;
+            if (options.transact) this.transact();
+            if (options.maxLength) maxLength = options.maxLength;
         };
 
-        this.transact = function (param) {
-            if (param instanceof Object) {
-                if (!param.undo) {
-                    param.undo = function () {
-                        document.execCommand('undo');
-                    }
-                }
-                stack[position].redo = param.redo;
-                stack.splice(position + 1);
-                stack.push({
-                    undo: param.undo
-                });
-                length = position + 1;
-                this.redo();
-            } else {
-                throw new Error('options for UndoManager.transact must be JSON');
+        this.transact = function () {
+            position++;
+            length = position + 1;
+
+            stack.splice(position);
+            stack.push(new Stack(this.container));
+
+            if (length > maxLength) {
+                stack.shift();
+                length--;
+                position--;
             }
+            this.transactedJustNow = true;
         };
 
+        this.transactedJustNow = false;
         this.undo = function () {
-            if (position <= 0) {
+            if (position - 1 < 0) {
                 if (console) console.warn('this is the start position of the undo stack');
                 return false;
             }
-            var s = getStack(position);
-            console.log(stack, position, s);
-            s.undo();
-            position--;
+
+            if (!this.transactedJustNow) {
+                this.transact();
+            }
+
+            stack.recover(--position)
         };
 
         this.redo = function () {
-            if (position >= length) {
+            if (position + 1 >= length) {
                 if (console) console.warn('this is the end position of the undo stack');
                 return false;
             }
-            var s = getStack(position);
-            s.redo();
-            position++;
-            console.log(stack, position)
+            stack.recover(++position);
         };
 
-        this.keyDownInterval = 20;
+        this.keyDownInterval = 5;
         this.keyDownCount = 0;
         /**
-         * key down every 20, remember the text typed before
+         * key down every 5, remember the text typed before
+         * 1. type visible keys to push into stack
+         *      1.1 the stack remembers the first node and offset of the first byte
+         * 2. type space, other function map keys to close the stack member
+         * 3. type 20 bytes to close the stack member
+         *      3.1 take emoji into consideration
          */
-        this.overwrite = function () {
-            var sel = window.getSelection();
-            // sel.g
+        this.overwrite = function (code) {
+            this.keyDownCount++;
+
+            if (this.keyDownCount > this.keyDownInterval || code === CODE.BACKSPACE) {
+                this.keyDownCount = 0;
+                this.transact();
+            }
+
+            this.transactedJustNow = false;
+        };
+        this.getState = function () {
+            return {stack: stack, length: length, position: position};
         }
     }
 
