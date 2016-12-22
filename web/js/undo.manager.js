@@ -9,6 +9,7 @@
 (function () {
 
     function Stack(container) {
+        container.normalize();
         this.html = container.innerHTML;
 
         // Caret information
@@ -143,6 +144,7 @@
                 position--;
             }
             this.transactedJustNow = true;
+            this.keyDownCount = 0;
         };
 
         this.transactedJustNow = false;
@@ -181,7 +183,6 @@
             this.keyDownCount++;
 
             if (this.keyDownCount > this.keyDownInterval || code === CODE.BACKSPACE) {
-                this.keyDownCount = 0;
                 this.transact();
             }
 

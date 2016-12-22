@@ -91,10 +91,10 @@ var Extend = {
         }
         this.innerHTML = tag('table', tag('thead', tag('tr', head)) + tag('tbody', tag('tr', body)));
         var firstTd = this.querySelector('tbody').querySelector('td');
-        setTimeout(function () {
-            Note.setCaret(firstTd, 0);
-            firstTd.innerHTML = '<br>';
-        }, 0);
+
+        Note.setCaret(firstTd, 0);
+        firstTd.innerHTML = '<br>';
+
         return false;
     },
     /** Separator */
@@ -102,7 +102,7 @@ var Extend = {
         var match = this.getText().match(/(?:^-{3,}$)|(?:^={3,}$)/);
         return match ? match[0].substr(0, 1) : false;
     },
-    separator: function (info) {
+    separator: function (type) {
         this.innerHTML = '<div class="fs"></div>';
         this.contentEditable = false;
         FunctionMap.createNewLineBelow2Go();
@@ -127,7 +127,7 @@ var Extend = {
             range.setStart(sel.anchorNode, sel.anchorOffset);
             range.insertNode(spaces);
             // Move the DocumentFragment from range to variable
-            var fragment =range.extractContents();
+            var fragment = range.extractContents();
             this.after(fragment);
             // The fragment becomes a node after being inserted
             // Since the fragment ends with </li>, it will be automatically prepend <li> after inserted

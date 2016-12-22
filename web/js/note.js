@@ -250,14 +250,6 @@ var Note = {
      */
     invokedKeys: [],
     invoke: function (event) {
-        // if (++UndoManager.keyDownCount > UndoManager.keyDownInterval && this.invokedKeys.length === 0) {
-        // UndoManager.keyDownCount = 0;
-        // UndoManager.overwrite(event);
-        // }
-        // // 229: type with chinese input, [a-z] and space will trigger event with code 229
-        // if (ArrayHelper.in(event.keyCode, [229])) {
-        //     return true;
-        // }
         try {
             var code = event.keyCode;
             // TODO:
@@ -266,6 +258,7 @@ var Note = {
             if (code == CODE.META_LEFT || code == CODE.META_RIGHT) {
                 return false;
             }
+            // if common key is pressed, but no functional key is, then, do some UndoManager.rewrite thing
             if (
                 this.isCommonKey(code) && (this.isKeyDown(CODE.SHIFT) || !this.sinceFunctionalKeyDown())
                 || code == CODE.BACKSPACE
@@ -273,25 +266,6 @@ var Note = {
                 UndoManager.overwrite(code);
                 return true;
             }
-            // if common key is pressed, but no functional key is, then, do some UndoManager.rewrite thing
-            /*
-             if (this.isCommonKey(code) && (this.isKeyDown(CODE.SHIFT) || !this.sinceFunctionalKeyDown())) {
-             // 1. write in content box
-             // 2. UndoManager.overwrite
-             return true;
-             var key = Code2Key[code];
-             if (!key) {
-             // todo: problem, cannot tell exactly when a punctuation is typed, what language the punctuation is in
-             // todo: such as, difference between chinese and english period
-             console.error('No key found in Code2Key, code', code, 'event.key:', "'" + event.key + "'");
-             return true;
-             } else if (!this.isKeyDown(CODE.SHIFT)) {
-             key = key.toLowerCase();
-             document.execCommand('insertText', false, key);
-             }
-             return false;
-             }
-             */
             if (code) {
                 this.keyDown(code);
             } else {
@@ -329,10 +303,14 @@ var Note = {
                 return true;
             }
 
+
             var action = FunctionMap[map.action];
 
             if (action && action instanceof Function) {
+                var toTransact = !ArrayHelper.in(map.action, ['undo', 'redo']);
+                if (toTransact) UndoManager.transact();
                 var performDefault = action.call(FunctionMap, event);
+                if (toTransact) UndoManager.transact();
                 /*
                  * action -> afterAction
                  */
@@ -454,6 +432,11 @@ var Note = {
             container.appendChild(this.createEmptyLine(tagName));
         }
     },
+    /**
+     * @param {Node} line
+     * @param {Array} validations
+     * @returns {boolean} True to go on default event, false to prevent
+     */
     extend: function (line, validations) {
         var validationMethod, result, info;
         var goOn = true;

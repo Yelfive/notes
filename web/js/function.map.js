@@ -58,37 +58,11 @@ var FunctionMap = {
         /* tab object to remember the tab being performed */
         var tab = Note.createTabNode();
         if (sel.isCollapsed) {
-            // UndoManager.transact({
-            //     redo: function () {
-                    document.execCommand('insertText', false, tab.textContent);
-            UndoManager.transact();
-            //     }
-            // });
+            document.execCommand('insertText', false, tab.textContent);
         }
         // selection is not collapsed but its in the same line
         else if (!sel.isCollapsed && line.contains(sel.anchorNode) && line.contains(sel.focusNode)) {
-            /**
-             * TODO
-             * it cannot remember the tabNode
-             * if undo is performed, the tabNode inserted won't get undone
-             * however, the modification before the inserting will get undone
-             * It will not remember the tabNode at all, as if it didn't happen
-             // line.prepend(tabNode);
-             */
-            // UndoManager.transact({
-            //     redo: function () {
-                    // if (!tab.textContent) tab = Note.createTabNode();
-                    line.prepend(tab);
-            UndoManager.transact();
-                // },
-                // undo: function () {
-                //     var r = new Range();
-                //     r.setStart(tab, 0);
-                //     r.setEnd(tab, tab.textContent.length);
-                //     r.deleteContents();
-                //     r.detach();
-                // }
-            // });
+            line.prepend(tab);
         }
     },
     undo: function () {
@@ -205,7 +179,6 @@ var FunctionMap = {
         /*
          * Check if the last line is empty line, otherwise, create new line
          * This makes sure there always is an empty line at the end of the note
-         * TODO: maybe, a afterExtend function is needed
          */
         Note.ensureLastLineEmpty();
     },
