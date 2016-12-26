@@ -177,27 +177,11 @@ var Note = {
         return document.createTextNode(tabString);
     },
     fnKeys: [CODE.ALT, CODE.CONTROL, CODE.SHIFT],
-    isCommonKey: function (code) {
-        return !ArrayHelper.in(code, this.fnKeys) && !ArrayHelper.in(code, [
-                CODE.ENTER, CODE.BACKSPACE, CODE.TAB, CODE.BACK_QUOTE,
-                CODE.ARROW_LEFT, CODE.ARROW_UP, CODE.ARROW_RIGHT, CODE.ARROW_DOWN
-            ]);
-    },
     isCharacterKey: function (code) {
         return code >= CODE.A && code <= CODE.Z // z-z
             || code >= CODE.ZERO && code <= CODE.NINE // 0-9
             || code >= CODE.SEMICOLON && code <= CODE.BACK_QUOTE // ;=,-./`
             || code >= CODE.BRACKET_LEFT && code <= CODE.QUOTE; // [\]'
-    },
-    sinceFunctionalKeyDown: function () {
-        var down = false;
-        ObjectHelper.each(this.fnKeys, function (k, v) {
-            if (Note.isKeyDown(v)) {
-                down = true;
-                return false;
-            }
-        });
-        return down;
     },
     /**
      * In lower case
@@ -250,7 +234,6 @@ var Note = {
                 }
                 return true;
             }
-
 
             var action = FunctionMap[map.action];
             if (action && action instanceof Function) {

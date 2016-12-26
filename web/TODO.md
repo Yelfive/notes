@@ -50,3 +50,6 @@ BUGS
     - multiple lines selected
 - meta
     - meta key does not trigger event keyup, prevent all default
+- Chinese input
+    - when Chinese get input, keyCode of 229 will be triggered
+     and not being able to be revoked

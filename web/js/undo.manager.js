@@ -180,7 +180,7 @@
          * 2. type space, other function map keys to close the stack member
          * 3. type 20 bytes to close the stack member
          *      3.1 take emoji into consideration
-         * @return {boolean} True to go on default event
+         * @return {boolean} True to go on default event, to get typed in
          */
         this.overwrite = function (code) {
             if (Note.isCharacterKey(code)
@@ -193,7 +193,7 @@
                     this.transact();
                 }
 
-                return true;
+                return code !== CODE.BACK_QUOTE; // back quote(`) has extra functionality
             }
         };
 

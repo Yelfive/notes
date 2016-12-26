@@ -4,7 +4,6 @@
 
 var Key2Function = [
     {code: [CODE.CONTROL, CODE.S],keys: ['Control', 'S'], action: 'save', description: 'Save'},
-    // {keys: ['Meta', 'S'], action: 'save', description: 'Save'},
     {code: [CODE.CONTROL, CODE.SHIFT, CODE.U], keys: ['Control', 'Shift', 'U'], action: 'toUpper', description: 'Change selection to Upper case'},
     {code: [CODE.CONTROL, CODE.SHIFT, CODE.L], keys: ['Control', 'Shift', 'L'], action: 'toLower', description: 'Change selection to Lower case'},
     {code: [CODE.SHIFT, CODE.ENTER], keys: ['Shift', 'Enter'], action: 'createNewLineBelow2Go', description: 'Create a new line below the caret, and move the caret to new line'},
