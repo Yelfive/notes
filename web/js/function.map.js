@@ -26,7 +26,7 @@ var FunctionMap = {
         } else {
             action = 'POST';
         }
-        // todo jQuery
+        // todo jQuery migrate into native js
         $.ajax({
             url: url,
             type: action,
@@ -104,7 +104,7 @@ var FunctionMap = {
              * The caret will be automatically set, unless
              * - the spaceNode contains noting(empty string)
              */
-            if (!spaceNode.textContent) Note.setCaret(spaceNode, 0)
+            if (!spaceNode.textContent) Caret.focusAt(spaceNode, 0)
         } else {
             // todo: anchor and focus is not in the same line
         }
@@ -132,7 +132,7 @@ var FunctionMap = {
         var newLine = data[0];
         var length = data[1];
         if (newLine) {
-            Note.setCaret(newLine, length ? length : 0);
+            Caret.focusAt(newLine, length ? length : 0);
         } else {
             return true;
         }
@@ -151,9 +151,11 @@ var FunctionMap = {
 
         var line = Note.getCurrentLine();
 
-        // line does not exist
-        // return false;
-        // if (!line) return true;
+        /*
+         * line does not exist
+         * e.g. the line.parentNode is the container
+         */
+        if (!line) return true;
 
         /*
          * When current line is empty,
@@ -171,8 +173,9 @@ var FunctionMap = {
 
         // Register and invoke the matched extending
         return Note.extend(line, [
+            'inTable',
             'codeBlock', 'tableBlock', 'autoIndent', 'separator'
-            // TODO: add extend check, table cell, enter in table cell multiple times
+            // 'tableCRLF'
         ]);
     },
     afterExtend: function () {
@@ -182,6 +185,10 @@ var FunctionMap = {
          */
         Note.ensureLastLineEmpty();
     },
+    /**
+     *
+     * @returns {boolean} Whether to go on default
+     */
     Backspace: function () {
         /**
          * Step 1: Command + A
@@ -194,6 +201,8 @@ var FunctionMap = {
          *
          * delete the Elements like the inline or block code
          */
+
+        return true;
     },
     /**
      * Only valid for text node selected
@@ -238,7 +247,7 @@ var FunctionMap = {
         code.innerHTML = ''.substring.apply(codeHTML, endAt == caretAt ? [1] : [0, codeHTML.length - 1]);
         var space = document.createTextNode(' ');
         code.after(space);
-        Note.setCaret(space, 1);
+        Caret.focusAt(space, 1);
     },
     /**
      * 1. check if in table cell
@@ -250,26 +259,107 @@ var FunctionMap = {
         if (false == cell) return true;
 
         var code = event.keyCode;
-        var node, offset = 0; // [node, offset]
+        var node, offset = -1;
         switch (code) {
             case CODE.ARROW_LEFT:
-                node = Note.findSiblingCell(cell, 'prev');
+            case CODE.ARROW_RIGHT:
+                node = Note.findSiblingCell(cell, code);
                 break;
             case  CODE.ARROW_UP:
+            case CODE.ARROW_DOWN:
+                node = Note.findVerticalCell(cell, code);
                 break;
-            case CODE.ARROW_RIGHT:
-                node = Note.findSiblingCell(cell, 'next');
-                break;
+        }
+
+        if (!node) {
+            var currentLine = Note.getCurrentLineStrictly();
+            if (!currentLine) return false;
+
+            if (code == CODE.ARROW_LEFT || code == CODE.ARROW_UP) {
+                node = currentLine.previousElementSibling;
+            } else {
+                node = currentLine.nextElementSibling;
+            }
+        } else {
+            if (code == CODE.ARROW_DOWN) {
+                node = node.firstChild;
+                offset = -1;
+            }
         }
         if (!node) {
-            console.error('no dst caret node', cell);
+            console.warn('Absolutely no dst node found');
             return false;
         }
-        Note.setCaret(node, offset);
+        Caret.focusAt(node, offset);
+    },
+    /**
+     *
+     * @param event
+     * @returns {boolean}
+     * @constructor
+     */
+    Arrow: function (event) {
+        var cell = Caret.inTableCell();
+
+        var sel = window.getSelection();
+        var focusNode = sel.focusNode;
+
+        function toCellAbove() {
+            // Check if there's HTLMElement(e.g. DIV ) before focusNode
+            if (focusNode !== cell && cell.contains(focusNode)) {
+                var node = focusNode;
+                while (node.parentNode !== cell) {
+                    node = node.parentNode;
+                }
+                while (node) {
+                    node = node.previousElementSibling;
+                    if (node instanceof HTMLDivElement) return false;
+                }
+            }
+
+            var r = new Range();
+            r.selectNode(cell);
+            r.setEnd(sel.focusNode, sel.focusOffset);
+            var fragment = r.cloneContents();
+            var hasLF = fragment.textContent.indexOf('\n') === -1;
+            var _toCellAbove = hasLF && code == CODE.ARROW_UP;
+            r.detach();
+            return _toCellAbove;
+        }
+
+        function toCellBelow() {
+            if (focusNode !== cell && cell.contains(focusNode)) {
+                var node = focusNode;
+                while (node.parentNode !== cell) {
+                    node = node.parentNode;
+                }
+                while (node) {
+                    node = node.nextElementSibling;
+                    if (node instanceof HTMLDivElement) return false;
+                }
+            }
+
+            var r = new Range();
+            r.selectNode(cell);
+            r.setStart(sel.focusNode, sel.focusOffset);
+            var fragment = r.cloneContents();
+            var endingString = fragment.textContent;
+            // The last \n is invisible
+            // There should be at least two LFs to make LF visible
+            // So the indexOf(\n) can be either the last character or does no exist
+            // to be consider as valid ArrowDown
+            var len = endingString.length;
+            var index = endingString.indexOf('\n');
+            var _toCellBellow = (index === -1 || index == len - 1) && code == CODE.ARROW_DOWN;
+            r.detach();
+            return _toCellBellow;
+        }
+
+        if (cell) {
+            var code = event.keyCode;
+            if (code != CODE.ARROW_UP && code != CODE.ARROW_DOWN) return true;
+            if (toCellAbove() || toCellBelow()) return this.tableActions(event);
+        }
+        return true;
     }
 };
-
-// todo: keyup to disable common keys but functional keys like (control shift)
-// todo: e.g. control+enter(multi-enters)
-
-// todo: arrow up/down/left/right

@@ -10,17 +10,16 @@
 <div id="container">
     <input type="hidden" name="id" id="note-id">
     <input class="outline-0" id="title" type="text" placeholder="Title">
-    <div class="outline-0" id="content-box" contenteditable="true"></div>
-    <!--
-    <div class="outline-0" id="content-box" contenteditable="true"><div><br></div>
-        <div>
-            <table>
+    <!--<div class="outline-0" id="content-box" contenteditable="true"></div>-->
+    <div class="outline-0" id="content-box" contenteditable="true">
+        <div><br></div>
+        <div>    <table>
                 <tfoot>
-                    <tr>
-                        <th>footer</th>
-                        <th>footer</th>
-                        <th>footer</th>
-                    </tr>
+                <tr>
+                    <th>footer</th>
+                    <th>footer</th>
+                    <th>footer</th>
+                </tr>
                 </tfoot>
                 <tbody>
                 <tr>
@@ -28,11 +27,14 @@
                     <td>body row 1</td>
                     <td>body row 1</td>
                 </tr>
-                <tr>
-                    <td>body row 2</td>
-                    <td>body row 2</td>
-                    <td>body row 2</td>
-                </tr>
+<tr>
+<td>body row 2</td>
+<td>
+    body row 2
+    sd
+
+</td><td>body row 2</td>
+</tr>
                 </tbody>
                 <thead>
                 <tr>
@@ -45,8 +47,8 @@
         </div>
         <div><br></div>
         <div><br></div>
+        <div><br></div>
     </div>
-    -->
     <div id="message"></div>
     <button id="btn1">Canonalize</button>
 </div>
@@ -84,6 +86,6 @@
         });
         html += '</ul>';
         $('#content-box').html(html);
-    })
+    });
 </script>
 </html>

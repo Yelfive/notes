@@ -13,11 +13,16 @@ var ObjectHelper = {
             console.error('callback should be the instance of Function');
         }
 
-        for (var i in data) {
-            if (data.hasOwnProperty(i) && false === callback.apply(this, [i, data[i]])) {
-                break;
+        if (data instanceof Array) {
+            ArrayHelper.each(data, callback);
+        } else {
+            for (var i in data) {
+                if (data.hasOwnProperty(i) && false === callback.apply(this, [i, data[i]])) {
+                    break;
+                }
             }
         }
+
     },
     is_array: function (data) {
         return data instanceof Array;
@@ -80,6 +85,13 @@ var ObjectHelper = {
 };
 
 var ArrayHelper = {
+    each : function (data, callback) {
+        for (var i = 0; data[i]; i++) {
+            if (data.hasOwnProperty(i) && false === callback.apply(this, [i, data[i]])) {
+                break;
+            }
+        }
+    },
     get: function (haystack, needle) {
         if (haystack && haystack.length) {
             var offset = needle < 0 ? haystack.length + needle : needle;

@@ -33,9 +33,9 @@
         this.setCaret = function () {
             if (!caret) return this;
             if (caret.collapsed) {
-                Note.setCaret(findNodeByPath(caret.focusPath), caret.focusOffset);
+                Caret.focusAt(findNodeByPath(caret.focusPath), caret.focusOffset);
             } else {
-                Note.setSelected(
+                Caret.setSelected(
                     findNodeByPath(caret.anchorPath), caret.anchorOffset,
                     findNodeByPath(caret.focusPath), caret.focusOffset
                 );
@@ -143,20 +143,22 @@
                 length--;
                 position--;
             }
-            this.transactedJustNow = true;
             this.keyDownCount = 0;
         };
 
-        this.transactedJustNow = false;
+        this.transactOnChange = function () {
+            if (stack[position].html !== this.container.innerHTML) {
+                this.transact();
+            }
+        };
+
         this.undo = function () {
             if (position - 1 < 0) {
                 if (console) console.warn('this is the start position of the undo stack');
                 return false;
             }
 
-            if (!this.transactedJustNow) {
-                this.transact();
-            }
+            this.transactOnChange();
 
             stack.recover(--position)
         };
@@ -178,16 +180,23 @@
          * 2. type space, other function map keys to close the stack member
          * 3. type 20 bytes to close the stack member
          *      3.1 take emoji into consideration
+         * @return {boolean} True to go on default event
          */
         this.overwrite = function (code) {
-            this.keyDownCount++;
+            if (Note.isCharacterKey(code)
+                && !Note.isKeyDown(CODE.CONTROL)
+                && !Note.isKeyDown(CODE.ALT)
+            ) {
+                this.keyDownCount++;
 
-            if (this.keyDownCount > this.keyDownInterval || code === CODE.BACKSPACE) {
-                this.transact();
+                if (this.keyDownCount > this.keyDownInterval || code === CODE.BACKSPACE) {
+                    this.transact();
+                }
+
+                return true;
             }
-
-            this.transactedJustNow = false;
         };
+
         this.getState = function () {
             return {stack: stack, length: length, position: position};
         }

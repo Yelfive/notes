@@ -27,6 +27,8 @@
  *
  *  isAutoIndent: Extend.isAutoIndent
  *  autoIndent: Extend.autoIndent
+ *
+ *  isTableCRLF: Extend.isTableCRLF
  * }}
  */
 var Extend = {
@@ -62,7 +64,7 @@ var Extend = {
             badge.className = 'code badge';
             code.prepend(badge);
         }
-        Note.setCaret(code.lastChild, 0);
+        Caret.focusAt(code.lastChild, 0);
         return false;
     },
     /** Table Block */
@@ -87,13 +89,13 @@ var Extend = {
         var body = '';
         for (var i = 0; i < info.length; i++) {
             head += tag('th', info[i]);
-            body += tag('td', '<br>');
+            body += tag('td', '<div><br></div>');
         }
+        console.log(tag('table', tag('thead', tag('tr', head)) + tag('tbody', tag('tr', body))))
         this.innerHTML = tag('table', tag('thead', tag('tr', head)) + tag('tbody', tag('tr', body)));
         var firstTd = this.querySelector('tbody').querySelector('td');
 
-        Note.setCaret(firstTd, 0);
-        firstTd.innerHTML = '<br>';
+        Caret.focusAt(firstTd, 0);
 
         return false;
     },
@@ -110,7 +112,7 @@ var Extend = {
     },
     /** Auto Indent */
     isAutoIndent: function () {
-        var match = this.getText().match(/^\s*/);
+        var match = this.getText().match(/(^ {4,})|(^\t+)/);
         if (!match) return false;
         // Returns how many tabs to indent
         // 1 = 1 tab or 4 spaces
@@ -120,7 +122,14 @@ var Extend = {
         var text = Note.tabString().repeat(length);
         var spaces = document.createTextNode(text);
 
-        if (Caret.inTheMiddle()) {
+        if (Caret.inTheBeginning()) {
+            return true;
+        } else if (Caret.inTheEnd()) {
+            var newLine = Note.createEmptyLine(this instanceof Node ? this.nodeName : undefined);
+            newLine.prepend(spaces);
+            this.after(newLine);
+            Caret.focusAt(spaces, text.length);
+        } else {
             var range = new Range();
             var sel = window.getSelection();
             range.selectNode(this);
@@ -131,15 +140,21 @@ var Extend = {
             this.after(fragment);
             // The fragment becomes a node after being inserted
             // Since the fragment ends with </li>, it will be automatically prepend <li> after inserted
-            Note.setCaret(this.nextSibling, text.length);
+            Caret.focusAt(this.nextSibling, text.length);
             // Detach for performance reason
             range.detach();
-        } else {
-            var newLine = Note.createEmptyLine(this instanceof Node ? this.nodeName : undefined);
-            newLine.prepend(spaces);
-            this.after(newLine);
-            Note.setCaret(spaces, text.length);
         }
         return false;
+    },
+    isInTable: function () {
+        return Caret.inTableCell();
+    },
+    inTable: function (cell) {
+        // Normalize
+        if (Note.normalize(cell)) {
+            return false;
+        }
+        var currentLine = Note.getCurrentLine();
+        return Note.extend(currentLine, ['autoIndent']);
     }
 };

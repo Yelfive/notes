@@ -1,5 +1,8 @@
-- how to deal with paste HTML, to be compatible with my Note
+TODO
+====
 - `Alt+Shift + Arrow*` to move line(s) in table
+- `Tab` to indent or out indent multiple lines
+- individual container child `Text node` should be considered as line
 - table
     - create new row
     - create new column
@@ -30,3 +33,20 @@
         \` => <i>`</i>
         \\ => <i>\</i>
 - `Control + Alt + O` to search files
+
+BUGS
+===
+- table
+    - press ArrowDown to move caret to the first line of the cell below(CL,RF)
+        - If the cell is text-node-only, cannot locate the accurate offset where the care should be placed
+- code
+    - inline code
+        - Arrow around inline code acts abnormally
+- undo manager
+    - arrow movement will trigger UndoManager.transact
+    - changes happened after keydown will not be recorded
+      by UndoManager
+- tab
+    - multiple lines selected
+- meta
+    - meta key does not trigger event keyup, prevent all default

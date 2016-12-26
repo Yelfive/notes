@@ -5,12 +5,29 @@
 const CODE = {
     BACKSPACE: 8,
     TAB: 9,
+    ENTER: 13,
+
     SHIFT: 16,
     CONTROL: 17,
     ALT: 18,
-    CAPS_LOCK: 20,
-    META_LEFT: 91, // Meta Left
-    META_RIGHT: 93, // Meta right
+
+    ARROW: -3,
+    ARROW_LEFT: 37,
+    ARROW_UP: 38,
+    ARROW_RIGHT: 39,
+    ARROW_DOWN: 40,
+
+    ZERO: 48,
+    ONE: 49,
+    TWO: 50,
+    THREE: 51,
+    FOUR: 52,
+    FIVE: 53,
+    SIX: 54,
+    SEVEN: 55,
+    EIGHT: 56,
+    NINE: 57,
+
     A: 65,
     B: 66,
     C: 67,
@@ -38,13 +55,19 @@ const CODE = {
     Y: 89,
     Z: 90,
 
-    ENTER: 13,
+    META_LEFT: 91, // Meta Left
+    META_RIGHT: 93, // Meta right
 
-    ARROW: -3,
-    ARROW_LEFT: 37,
-    ARROW_UP: 38,
-    ARROW_RIGHT: 39,
-    ARROW_DOWN: 40,
+    SEMICOLON: 186, // ;
+    EQUAL: 187, // =
+    COMMA: 188, // ,
+    DASH: 189, // -
+    DOT: 190, // .
+    FORWARD_SLASH: 191, // /
+    BACK_QUOTE: 192,    // `
 
-    BACK_QUOTE: 192
+    BRACKET_LEFT: 219, // [
+    BACKSLASH: 220, // \
+    BRACKET_RIGHT: 221, // ]
+    QUOTE: 222 // '
 };

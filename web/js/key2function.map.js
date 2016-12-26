@@ -17,10 +17,7 @@ var Key2Function = [
     {code: [CODE.CONTROL, CODE.Z], keys: ['Control', 'Z'], action: 'undo', description: 'Undo'},
     {code: [CODE.CONTROL, CODE.Y], keys: ['Control', 'Y'], action: 'redo', description: 'Redo'},
     /* Table options */
-    {code: [CODE.CONTROL, CODE.ARROW], keys: ['Control', 'Arrow'], action: 'tableActions', description: 'Move to previous column in a table'},
-    {code: [CODE.BACKSPACE], keys: ['Control', 'Backspace'], action: 'backspace', type: 'builtin'}
-    // {keys: ['Control', 'ArrowLeft'], action: 'tableColumnPrev', description: 'Move to previous column in a table'},
-    // {keys: ['Control', 'ArrowRight'], action: 'tableColumnNext', description: 'Move to next column in a table'},
-    // {keys: ['Control', 'ArrowUp'], action: 'tableRowPrev', description: 'Move to previous row in a table'},
-    // {keys: ['Control', 'ArrowDown'], action: 'tableRowPrev', description: 'Move to next row in a table, create if not exists'}
+    {code: [CODE.ALT, CODE.ARROW], keys: ['Alt', 'Arrow'], action: 'tableActions', description: 'Move to previous column in a table'},
+    {code: [CODE.BACKSPACE], keys: ['Control', 'Backspace'], action: 'Backspace', type: 'builtin'},
+    {code: [CODE.ARROW], keys: ['Arrow'], action: 'Arrow', type: 'builtin'}
 ];

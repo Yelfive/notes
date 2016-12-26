@@ -143,7 +143,6 @@ var Note = {
             return next ? next : nextNode(node.parentNode);
         }
 
-        // todo Case 0: collapsed
         // Case 1: begin=end
         if (begin == end) {
             var anchorOffset = sel.anchorOffset;
@@ -162,7 +161,7 @@ var Note = {
             }
             _changeCase(end, 0, endOffset);
         }
-        this.setSelected(begin, beginOffset, end, endOffset);
+        Caret.setSelected(begin, beginOffset, end, endOffset);
     },
     wrapWithLine: function (text) {
         if (text instanceof Node) {
@@ -172,53 +171,6 @@ var Note = {
             range.surroundContents(wrap);
             return wrap;
         }
-    },
-    findLastChildTextNode: function (node) {
-        var child = node;
-        if (child instanceof Text) return child;
-
-        return this.findLastChildTextNode(child.lastChild);
-    },
-    /**
-     * - node is Text
-     *      Set caret at the Text's given offset
-     * - node is Element
-     *      Set caret at the first Text child's given offset
-     * @param {Node} node
-     * @param {int} offset The offset of the Text Node
-     */
-    setCaret: function (node, offset) {
-        var selection = window.getSelection();
-        var range = new Range();
-        var start;
-        if (offset < 0) { // place the caret at the end of the node
-            start = this.findLastChildTextNode(node);
-            offset = start.textContent.length;
-        } else {
-            start = node.firstChild ? node.firstChild : node;
-        }
-        // set the caret
-        selection.removeAllRanges();
-        node.normalize(); // To merge adjacent, remove empty
-        range.setStart(start, offset);
-        selection.addRange(range);
-    },
-    setSelected: function (begin, beginOffset, end, endOffset) {
-        var sel = getSelection();
-        var range = new window.Range();
-        range.setStart(begin, beginOffset);
-        range.setEnd(end, endOffset);
-        /*
-         * 1: `begin` is the same as `end`, but beginOffset > endOffset
-         * 2: `end` is ahead of `begin`
-         */
-        if (range.collapsed) {
-            range.setStart(end, endOffset);
-            range.setEnd(begin, beginOffset);
-        }
-        sel.removeAllRanges();
-        sel.addRange(range);
-        range.detach();
     },
     createTabNode: function () {
         var tabString = Note.tabString();
@@ -232,7 +184,10 @@ var Note = {
             ]);
     },
     isCharacterKey: function (code) {
-        return code >= CODE.A && code <= CODE.Z;
+        return code >= CODE.A && code <= CODE.Z // z-z
+            || code >= CODE.ZERO && code <= CODE.NINE // 0-9
+            || code >= CODE.SEMICOLON && code <= CODE.BACK_QUOTE // ;=,-./`
+            || code >= CODE.BRACKET_LEFT && code <= CODE.QUOTE; // [\]'
     },
     sinceFunctionalKeyDown: function () {
         var down = false;
@@ -259,13 +214,8 @@ var Note = {
                 return false;
             }
             // if common key is pressed, but no functional key is, then, do some UndoManager.rewrite thing
-            if (
-                this.isCommonKey(code) && (this.isKeyDown(CODE.SHIFT) || !this.sinceFunctionalKeyDown())
-                || code == CODE.BACKSPACE
-            ) {
-                UndoManager.overwrite(code);
-                return true;
-            }
+            if (UndoManager.overwrite(code)) return true;
+
             if (code) {
                 this.keyDown(code);
             } else {
@@ -275,11 +225,9 @@ var Note = {
 
             // Retrieve pressed keys
             this.invokedKeys = [];
-            for (var p in this.down) {
-                if (this.down[p]) {
-                    this.invokedKeys.push(parseInt(p));
-                }
-            }
+            ObjectHelper.each(this.down, function (k) {
+                if (Note.down[k]) Note.invokedKeys.push(parseInt(k));
+            });
 
             var map = this.invokedKeys.length ? this._hashedKeyFunction[this.hashKey(this.invokedKeys)] : null;
             if (!map) {
@@ -305,12 +253,11 @@ var Note = {
 
 
             var action = FunctionMap[map.action];
-
             if (action && action instanceof Function) {
-                var toTransact = !ArrayHelper.in(map.action, ['undo', 'redo']);
-                if (toTransact) UndoManager.transact();
+                console.info('Performing action', map.action);
+                UndoManager.transactOnChange();
                 var performDefault = action.call(FunctionMap, event);
-                if (toTransact) UndoManager.transact();
+                UndoManager.transactOnChange();
                 /*
                  * action -> afterAction
                  */
@@ -378,40 +325,28 @@ var Note = {
      */
     getCurrentLine: function () {
         var sel = window.getSelection();
-        var line = sel.anchorNode;
+        var line = sel.focusNode;
 
         // while (line && this._container.contains(line)) {
         while (line && line != this._container) {
             if (line.isLine()) return line;
             line = line.parentNode;
         }
-        if (sel.anchorNode instanceof Text) {
-            return sel.anchorNode;
+        if (sel.focusNode instanceof Text) {
+            return sel.focusNode;
         }
         return null;
     },
-    /**
-     * Canonicalize given line into into formal Note.PARAGRAPH_TYPE line
-     * and returns it
-     * This is used when press 'Enter' in pasted lines, and the format is not supposed
-     * @param {HTMLElement} line
-     * @returns {Node}
-     */
-    canonicalize: function (line) {
-        if (!(line instanceof this.PARAGRAPH_TYPE)) { // change into a PARAGRAPH_TYPE node
-            var newLine = this.createEmptyLine();
-            // newLine.innerHTML = line.innerHTML;
-            // var sel = window.getSelection();
-            var range = new Range();
-            range.setEnd(line, 0);
-            range.insertNode(newLine);
-            newLine.appendChild(line);
-            // line.parentNode.removeChild(line);
-            line = newLine;
-        } else if (/^\s*$/.test(line.innerHTML)) { //
-
+    getCurrentLineStrictly: function () {
+        var sel = window.getSelection();
+        var line = sel.focusNode;
+        var _p;
+        while (line && line !== this._container) {
+            _p = line.parentNode;
+            if (_p === this._container) return line;
+            line = _p;
         }
-        return line;
+        return null;
     },
     /**
      * Check if the last line is empty line, otherwise, create new line
@@ -461,90 +396,84 @@ var Note = {
         });
         return goOn;
     },
-    /**
-     * @param {HTMLTableCellElement} cell
-     * @returns {Boolean|HTMLTableCellElement|Node}
-     */
-    findPreviousCell: function (cell) {
-        // Try previous cell <td>
-        var node = cell.previousElementSibling;
-        if (node) return node;
+    findVerticalCell: function (cell, keyCode) {
+        var row = cell.parentNode;
+        var index = [].indexOf.call(row.children, cell);
 
-        // Try last cell of previous row <tr>;
-        var currentRow = cell.parentNode;
-        var previousRow = currentRow.previousElementSibling;
-        if (previousRow) return previousRow.lastElementChild;
-
-        // No previous row found
-        // Check if a head row exists(current row belongs table body)
-        var currentTablePart = currentRow.parentNode;
-        var previousTablePart;
-        switch (currentTablePart.nodeName) {
-            case 'TFOOT':
-                previousTablePart = currentTablePart.parentNode.getElementsByTagName('tbody')[0];
-                // If the table body does not exist, try get the head instead
-                if (previousTablePart) break;
-            case 'TBODY':
-                previousTablePart = currentTablePart.parentNode.getElementsByTagName('thead')[0];
-                break;
-            default:
-                return false;
-        }
-        if (!previousTablePart) return false;
-
-        previousRow = previousTablePart.lastElementChild;
-
-        return previousRow ? previousRow.lastElementChild : false;
-
-    },
-    /**
-     * @param {HTMLTableCellElement} cell
-     * @returns {Boolean|HTMLTableCellElement|Node}
-     */
-    findNextCell: function (cell) {
-        // Try previous cell <td>
-        var node = cell.nextElementSibling;
-        if (node) return node;
-
-        // Try last cell of previous row <tr>;
-        var currentRow = cell.parentNode;
-        var nextRow = currentRow.nextElementSibling;
-        if (nextRow) return nextRow.firstElementChild;
-
-        // No previous row found
-        // Check if a head row exists(current row belongs table body)
-        var currentTablePart = currentRow.parentNode;
-        var previousTablePart;
-        switch (currentTablePart.nodeName) {
-            case 'THEAD':
-                previousTablePart = currentTablePart.parentNode.getElementsByTagName('tbody')[0];
-                // If the table body does not exist, try get the head instead
-                if (previousTablePart) break;
-            case 'TBODY':
-                previousTablePart = currentTablePart.parentNode.getElementsByTagName('tfoot')[0];
-                break;
-            default:
-                return false;
-        }
-        if (!previousTablePart) return false;
-
-        nextRow = previousTablePart.firstElementChild;
-
-        return nextRow ? nextRow.firstElementChild : false;
-    },
-    findSiblingCell: function (cell, direction) {
         var sibling, child;
-        switch (direction) {
-            case 'next':
+        switch (keyCode) {
+            case CODE.ARROW_UP:
+                sibling = 'previousElementSibling';
+                break;
+            case CODE.ARROW_DOWN:
+                sibling = 'nextElementSibling';
+                break;
+            default:
+                throw new Error('Parameter keyCode should suggest either up or don');
+        }
+        var siblingRow = row[sibling];
+        if (siblingRow) return siblingRow.children[index];
+
+        var currentTablePart = row.parentNode;
+        var siblingTablePart = false;
+        switch (currentTablePart.nodeName) {
+            case 'THEAD': // Find TBODY
+                if (keyCode == CODE.ARROW_UP) return false;
+                // ArrowDown
+                siblingTablePart = currentTablePart.parentNode.getElementsByTagName('tbody')[0];
+                // If no TBODY found, go from THEAD to TFOOT
+                if (siblingTablePart) {
+                    child = 'firstElementChild';
+                    break;
+                }
+            case 'TFOOT': // Find TBODY
+                // Skip TFOOT if the siblingTablePart is not initialized
+                // This is equivalent to `currentTablePart.nodeName !== 'TFOOT'`
+                // The later requires an extra dom property query (currentTablePart.nodeName)
+                if (siblingTablePart !== false) break;
+                // prevent default when ArrowDown
+                if (keyCode == CODE.ARROW_DOWN) return false;
+                // ArrowUp
+                siblingTablePart = currentTablePart.parentNode.getElementsByTagName('tbody')[0];
+                // If no TBODY found, go from TFOOT to THEAD
+                if (siblingTablePart) {
+                    child = 'lastElementChild';
+                    break;
+                }
+            case 'TBODY': // Find THEAD/TFOOT
+                var tagName;
+                if (keyCode == CODE.ARROW_UP) {
+                    tagName = 'thead';
+                    child = 'lastElementChild';
+                } else {
+                    tagName = 'tfoot';
+                    child = 'firstElementChild';
+                }
+                siblingTablePart = currentTablePart.parentNode.getElementsByTagName(tagName)[0];
+        }
+
+        if (!siblingTablePart) return false;
+
+        siblingRow = siblingTablePart[child];
+        if (!siblingRow) return false;
+
+        return siblingRow.children[index] || false;
+
+    },
+    findSiblingCell: function (cell, keyCode) {
+        var sibling, child;
+
+        switch (keyCode) {
+            case CODE.ARROW_RIGHT: // next
                 sibling = 'nextElementSibling';
                 child = 'firstElementChild';
                 break;
-            case 'prev':
+            case CODE.ARROW_LEFT: // previous
                 sibling = 'previousElementSibling';
                 child = 'lastElementChild';
                 break;
             default:
-                throw new Error('Parameter direction should be either next or prev');
+                throw new Error('Parameter keyCode should suggest either left or right');
         }
         // Try previous cell <td>
         var node = cell[sibling];
@@ -557,21 +486,26 @@ var Note = {
 
         // No previous row found
         // Check if a head row exists(current row belongs table body)
+        // current part enumerate in (THEAD TBODY TFOOT)
         var currentTablePart = currentRow.parentNode;
         var siblingTablePart = false;
         switch (currentTablePart.nodeName) {
-            case 'THEAD':
-                if (direction == 'prev') return false;
+            case 'THEAD': // Find body
+                if (keyCode == CODE.ARROW_LEFT) return false;
                 siblingTablePart = currentTablePart.parentNode.getElementsByTagName('tbody')[0];
+                // If the TBODY does not exist, try get the TFOOT instead
                 if (siblingTablePart) break;
-            case 'TFOOT':
+            case 'TFOOT': // Find body
+                // Skip TFOOT if the siblingTablePart is not initialized
+                // This is equivalent to `currentTablePart.nodeName !== 'TFOOT'`
+                // The later requires an extra dom property query (currentTablePart.nodeName)
                 if (siblingTablePart !== false) break;
-                if (direction == 'next') return false;
+                if (keyCode == CODE.ARROW_RIGHT) return false;
                 siblingTablePart = currentTablePart.parentNode.getElementsByTagName('tbody')[0];
-                // If the table body does not exist, try get the head instead
+                // If the TBODY does not exist, try get the THEAD instead
                 if (siblingTablePart) break;
-            case 'TBODY':
-                siblingTablePart = currentTablePart.parentNode.getElementsByTagName(direction == 'prev' ? 'thead' : 'tfoot')[0];
+            case 'TBODY': // Find head/body
+                siblingTablePart = currentTablePart.parentNode.getElementsByTagName(keyCode == CODE.ARROW_LEFT ? 'thead' : 'tfoot')[0];
                 break;
             default:
                 return false;
@@ -581,6 +515,69 @@ var Note = {
         siblingRow = siblingTablePart[child];
 
         return siblingRow ? siblingRow[child] : false;
+    },
+    normalize: function (parentNode) {
+        parentNode.normalize();
+        var LF = '\n';
+
+        // Collect text nodes
+        // [arrayOfNodesInTheSameLine, ...]
+        var nodes = [[]];
+        var i = 0, _node = parentNode.firstChild;
+        var endWithLF = false;
+        var text, index;
+        while (_node) {
+            // Skip empty string
+            if (_node instanceof Text && (text = _node.textContent)) {
+                index = text.indexOf(LF);
+                // If no LF, push into last two-dimension array, indexed by i
+                if (index === -1) {
+                    endWithLF = false;
+                    if (!nodes[i]) nodes[i] = [];
+                    nodes[i].push(_node);
+                }
+                // If there is, split the Text node,
+                // then the split next text node should start a new array
+                else {
+                    endWithLF = true;
+                    _node.splitText(index + 1);
+                    _node.textContent = _node.textContent.substr(0, index);
+                    nodes[i].push(_node);
+                    nodes[++i] = [];
+                }
+                // } else if (_node instanceof Element && _node.nodeName != 'BR') {
+
+            }
+            _node = _node.nextSibling;
+        }
+
+        // Wrap the text with paragraph
+        var r, wrapper;
+        var normalized = false;
+        ObjectHelper.each(nodes, function (k, nodeArray) {
+            r = new Range();
+            wrapper = document.createElement('div');
+            ObjectHelper.each(nodeArray, function (index, textNode) {
+                // Break when the last element is LF
+                if (k === i && nodeArray.length == index + 1 && endWithLF) {
+                    return false;
+                }
+                if (index == 0) {
+                    r.selectNode(textNode);
+                    r.surroundContents(wrapper);
+                } else {
+                    wrapper.append(textNode);
+                }
+                normalized = true;
+            });
+            if (wrapper.innerText === '') {
+                wrapper.normalize();
+                wrapper.append(document.createElement('br'));
+            }
+            r.detach();
+        });
+        if (normalized) Caret.focusAt(parentNode, -1);
+        return normalized;
     }
 };
 
@@ -613,7 +610,7 @@ ObjectHelper.each({
         return ArrayHelper.in(this.nodeName, ['P', 'DIV', 'LI']);
     },
     isStrictLine: function () {
-        return this.parentNode === this._container;
+        return this.parentNode === Note._container;
     },
     getText: function () {
         if (this instanceof Text) return this.textContent;
@@ -627,30 +624,11 @@ ObjectHelper.each({
         var sel = window.getSelection();
         if (!sel.isCollapsed) return false;
 
+        if (sel.focusNode instanceof HTMLTableCellElement) {
+            return false;
+        }
+
         return true;
-        // var length = Extend.isAutoIndent.apply(Note.getCurrentLine());
-        // if (length) return true;
-        /*
-         * 1. current line contains only text
-         * 2. current line contains text and tags with no text (this is text<br>)
-         *
-         * And for both of the situations, they match innerText.length=selection.offset
-         * ```html
-         * This is <b>strong text</b>
-         * ```
-         * When the caret is in the end
-         * - `offset=0`     (offset starts from </b>)
-         * - `innerText.length=19`
-         * So they won't match, and that won't be considered as extensible
-         */
-        var range = new Range();
-        // Set the range contains the whole line
-        range.selectNodeContents(this);
-        // Set the start position for the range, to minimize the range
-        // This range starts from selected anchor and offset, ends at the end of the line
-        range.setStart(sel.anchorNode, sel.anchorOffset);
-        // Check if the range contains anything
-        return range.cloneContents().textContent.length == 0;
     }
 }, function (k, v) {
     Node.prototype[k] = v;
