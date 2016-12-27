@@ -67,19 +67,47 @@ var Extend = {
         Caret.focusAt(code.lastChild, 0);
         return false;
     },
-    /** Table Block */
+    /**
+     *  Table Block
+     *  @return {Array|Boolean} [[title, alignment], ...]
+     */
     isTableBlock: function () {
         // |x|x|, the table must start and end with "|"
         var match = this.getText().match(/^\s*(?:\|[^\|]+)+\|\s*$/g);
         if (match instanceof Array) {
             var cells = match[0].split('|');
-            cells.shift();
-            cells.pop();
+            cells.shift(); // first empty string by "|" in the end
+            cells.pop(); // last empty string by "|" in front
+            var leftColon, rightColon, length;
+            ArrayHelper.each(cells, function (k, c) {
+                length = c.length;
+                leftColon = c[0] === ':';
+                rightColon = c[length - 1] === ':';
+
+                if (leftColon && rightColon) {  // |:title:|
+                    cells[k] = [c.substr(1, length - 2)];
+                    cells[k].push('center');
+                    return true;
+                } else if (!leftColon && !rightColon) { // |title|
+                    cells[k] = [c];
+                    cells[k].push('center')
+                } else if (rightColon) { // |title:|
+                    cells[k] = [c.substr(0, length - 1)];
+                    cells[k].push('right');
+                } else { // |:title|
+                    cells[k] = [c.substr(1)];
+                    cells[k].push('left');
+                }
+            });
             return cells;
         } else {
             return false;
         }
     },
+    /**
+     * @param {Array} info [[title, alignment], ...]
+     * @returns {boolean}
+     */
     tableBlock: function (info) {
         var tag = function () {
             return HtmlHelper.tag.apply(HtmlHelper, arguments);
@@ -88,10 +116,9 @@ var Extend = {
         var head = '';
         var body = '';
         for (var i = 0; i < info.length; i++) {
-            head += tag('th', info[i]);
-            body += tag('td', '<div><br></div>');
+            head += tag('th', tag('div', info[i][0]), {align: info[i][1]});
+            body += tag('td', tag('div', '<br>'), {align: info[i][1]});
         }
-        console.log(tag('table', tag('thead', tag('tr', head)) + tag('tbody', tag('tr', body))))
         this.innerHTML = tag('table', tag('thead', tag('tr', head)) + tag('tbody', tag('tr', body)));
         var firstTd = this.querySelector('tbody').querySelector('td');
 

@@ -53,20 +53,13 @@
              */
 
             var data = previousSibling.data;
-            if (data && data.key === 'fc-wrapper') {
+            // todo, delete table, block code
+            if (data && data.key === 'fc-wrapper'/* || previousSibling instanceof HTMLTableElement*/) {
                 Caret.setSelected(previousSibling);
             } else if (!ObjectHelper.instanceOf(previousSibling, HTMLTableCellElement)) {
                 Note.removeNode(this.focusNode);
                 Caret.focusAt(previousSibling, -1);
             }
-            // This is the last element of the line exists
-            // Check if the parent or the exists
-            // else if (!previousSibling) {
-            //     var parent = this.focusNode.parentNode;
-            //     if (parent) {
-            //
-            //     }
-            // }
             return false;
         },
         process: function () {
