@@ -149,6 +149,8 @@ var FunctionMap = {
             return true;
         }
 
+        Note.normalize(Note._container);
+
         var line = Note.getCurrentLine();
 
         /*
@@ -203,41 +205,12 @@ var FunctionMap = {
          *      1.1 collapsed
          *      1.2 selection
          */
-        var sel = window.getSelection();
-        var focusNode = sel.focusNode;
-
-        var r = sel.getRangeAt(0);
-        if (r.collapsed) r.setStart(focusNode, sel.focusOffset > 1 ? sel.focusOffset - 1 : 0);
-        // Record node & offset before deleteContents
-        // or r.startContainer will be changed
-        var node = r.startContainer;
-        var offset = r.startOffset;
-        r.deleteContents();
-        r.detach();
-        if (node.getHTML() === '') {
-            var next, previous = node.previousSibling;
-            var data;
-            if (previous && !previous.isEmpty()) {
-                data = previous.dataset;
-                if (data && data.type === 'fc-wrapper') {
-                    previous.after(document.createTextNode(SP));
-                }
-                node = previous;
-                offset = -1;
-            } else if ((next = node.nextSibling) && !next.isEmpty()) {
-                data = next.dataset;
-                if (data && data.type === 'fc-wrapper') {
-                    next.before(document.createTextNode(SP));
-                }
-                node = next;
-                offset = 0;
-            } else {
-                node = node.parentNode;
-                offset = 0;
-            }
-        }
-        Caret.focusAt(node, offset);
-        return false;
+        return Delete.run();
+        return Delete.extend([
+            'emptyBeforeDeletion',
+            'process',
+            'emptyAfterDeletion'
+        ]);
     },
     /**
      * Only valid for text node selected

@@ -81,11 +81,14 @@ var ObjectHelper = {
             _[v] = k;
         });
         return _;
+    },
+    isBoolean: function (value) {
+        return value === true || value === false;
     }
 };
 
 var ArrayHelper = {
-    each : function (data, callback) {
+    each: function (data, callback) {
         for (var i = 0; data[i]; i++) {
             if (data.hasOwnProperty(i) && false === callback.apply(this, [i, data[i]])) {
                 break;

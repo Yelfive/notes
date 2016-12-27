@@ -200,7 +200,9 @@ var Note = {
             // if common key is pressed, but no functional key is, then, do some UndoManager.rewrite thing
             if (UndoManager.overwrite(code)) return true;
 
-            if (code) {
+            // maximum key code available,
+            // in case codes like 229(press every key with Chinese input) pressed
+            if (code <= CODE.QUOTE) {
                 this.keyDown(code);
             } else {
                 if (console) console.log('"' + event.keyCode + '":', '"' + event.key.ucfirst() + '"');
@@ -560,6 +562,24 @@ var Note = {
         });
         if (normalized) Caret.focusAt(parentNode, -1);
         return normalized;
+    },
+    /**
+     * Find the most-top level empty-text Element recursively
+     */
+    findTopEmptyParent: function (node) {
+        if (node.getText().length !== 0) {
+            throw new Error('node must be an Element with no text');
+        }
+        if (node.contains(Note._container)) {
+            throw new Error('node should be descendant of Note._container');
+        }
+        var parent = node;
+        var _grand = parent.parentNode;
+        while (_grand instanceof Node && _grand.getText().length === 0 && Note._container !== _grand) {
+            parent = _grand;
+            _grand = parent.parentNode;
+        }
+        return parent;
     }
 };
 
