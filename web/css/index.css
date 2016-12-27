@@ -5,10 +5,11 @@ html, body {
     font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
 }
 
-ul, div, html, body {
+ul, div, html, body, span, code {
     margin: 0;
     padding: 0;
     border: none;
+    outline: 0;
 }
 
 #content-box {
@@ -86,6 +87,19 @@ ul, div, html, body {
     padding: 5px 0;
     border: 1px solid #dddddd;
 }
+
+#content-box .fc-inline::before,
+#content-box .fc-inline::after {
+    content: ' ';
+    display: inline-block;
+    width: 0.2rem;
+}
+
+/*span[contenteditable="false"]::after {*/
+/*content: '';*/
+/*display: inline-block;*/
+/*width: 0.2rem;*/
+/*}*/
 
 #content-box .fc-inline {
     display: inline;

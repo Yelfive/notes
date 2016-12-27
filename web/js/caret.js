@@ -21,22 +21,26 @@ CaretBase.prototype = {
         }
         return false;
     },
-    inTheEnd: function () {
+    inTheEnd: function (node) {
+        if (!node) node = Note.getCurrentLine();
+
         var sel = window.getSelection();
         var range = new Range();
         // Set the range contains the whole line
-        range.selectNodeContents(Note.getCurrentLine());
+        range.selectNodeContents(node);
         // Set the start position for the range, to minimize the range
         // This range starts from selected anchor and offset, ends at the end of the line
         range.setStart(sel.anchorNode, sel.anchorOffset);
         // Check if the range contains anything
         return range.cloneContents().textContent.length === 0;
     },
-    inTheBeginning: function () {
+    inTheBeginning: function (node) {
+        if (!node) node = Note.getCurrentLine();
         var sel = window.getSelection();
         var range = new Range();
-        range.selectNodeContents(Note.getCurrentLine());
+        range.selectNodeContents(node);
         range.setEnd(sel.focusNode, sel.focusOffset);
+        console.log('"'+range.cloneContents().textContent + '"');
         return range.cloneContents().textContent.length === 0;
     },
     findLastChildNode: function (node) {

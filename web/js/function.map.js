@@ -199,10 +199,45 @@ var FunctionMap = {
          *
          * ====
          *
-         * delete the Elements like the inline or block code
+         *  1. delete the Elements like the inline or block code
+         *      1.1 collapsed
+         *      1.2 selection
          */
+        var sel = window.getSelection();
+        var focusNode = sel.focusNode;
 
-        return true;
+        var r = sel.getRangeAt(0);
+        if (r.collapsed) r.setStart(focusNode, sel.focusOffset > 1 ? sel.focusOffset - 1 : 0);
+        // Record node & offset before deleteContents
+        // or r.startContainer will be changed
+        var node = r.startContainer;
+        var offset = r.startOffset;
+        r.deleteContents();
+        r.detach();
+        if (node.getHTML() === '') {
+            var next, previous = node.previousSibling;
+            var data;
+            if (previous && !previous.isEmpty()) {
+                data = previous.dataset;
+                if (data && data.type === 'fc-wrapper') {
+                    previous.after(document.createTextNode(SP));
+                }
+                node = previous;
+                offset = -1;
+            } else if ((next = node.nextSibling) && !next.isEmpty()) {
+                data = next.dataset;
+                if (data && data.type === 'fc-wrapper') {
+                    next.before(document.createTextNode(SP));
+                }
+                node = next;
+                offset = 0;
+            } else {
+                node = node.parentNode;
+                offset = 0;
+            }
+        }
+        Caret.focusAt(node, offset);
+        return false;
     },
     /**
      * Only valid for text node selected
@@ -241,12 +276,22 @@ var FunctionMap = {
         range.setEnd(node, endAt);
         var code = document.createElement('code');
         code.className = 'fc fc-inline';
+        code.contentEditable = true;
         range.surroundContents(code);
+
+        var codeWrapper = document.createElement('span');
+        codeWrapper.contentEditable = false;
+        codeWrapper.dataset.type = 'fc-wrapper';
+        range.surroundContents(codeWrapper);
+
         var codeHTML = code.innerHTML;
         // Condition `endAt == caretAt` means: former(this first typed-in) ` is in the font
         code.innerHTML = ''.substring.apply(codeHTML, endAt == caretAt ? [1] : [0, codeHTML.length - 1]);
         var space = document.createTextNode(' ');
-        code.after(space);
+        // code.after(space);
+        // Caret.focusAt(space, 1);
+        codeWrapper.after(space);
+        codeWrapper.before(space.cloneNode(false));
         Caret.focusAt(space, 1);
     },
     /**
@@ -359,6 +404,11 @@ var FunctionMap = {
             var code = event.keyCode;
             if (code != CODE.ARROW_UP && code != CODE.ARROW_DOWN) return true;
             if (toCellAbove() || toCellBelow()) return this.tableActions(event);
+        } else {
+            // Caret.focusAt(Note._container.lastChild.firstChild, 5);
+            // console.log(sel.focusNode);
+            // return false;
+
         }
         return true;
     }

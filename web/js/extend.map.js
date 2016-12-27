@@ -155,6 +155,6 @@ var Extend = {
             return false;
         }
         var currentLine = Note.getCurrentLine();
-        return Note.extend(currentLine, ['autoIndent']);
+        return Note.extend(currentLine, ['autoIndent', 'codeBlock']);
     }
 };

@@ -501,7 +501,6 @@ var Note = {
     },
     normalize: function (parentNode) {
         parentNode.normalize();
-        var LF = '\n';
 
         // Collect text nodes
         // [arrayOfNodesInTheSameLine, ...]

@@ -71,3 +71,6 @@ const CODE = {
     BRACKET_RIGHT: 221, // ]
     QUOTE: 222 // '
 };
+
+const SP = ' ';
+const LF = '\n';
