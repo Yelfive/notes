@@ -34,8 +34,10 @@
              *  press backspace here
              */
             var previousSibling = this.focusNode.previousSibling;
+
+            if (!ObjectHelper.instanceOf(previousSibling, HTMLElement)) return false;
+
             if (this.focusNode.isStrictLine()) {
-                if (!previousSibling) return false;
                 this.range.selectNode(this.focusNode);
                 this.caretNode = previousSibling;
                 this.caretOffset = -1;
@@ -49,8 +51,13 @@
              * select the whole [contenteditable="false"] Element to notify the user
              * the whole block will be deleted
              */
-            else if (previousSibling instanceof HTMLElement) {
+
+            var data = previousSibling.data;
+            if (data && data.key === 'fc-wrapper') {
                 Caret.setSelected(previousSibling);
+            } else if (!ObjectHelper.instanceOf(previousSibling, HTMLTableCellElement)) {
+                Note.removeNode(this.focusNode);
+                Caret.focusAt(previousSibling, -1);
             }
             // This is the last element of the line exists
             // Check if the parent or the exists
@@ -63,13 +70,6 @@
             return false;
         },
         process: function () {
-            if (!this.range.collapsed) {
-                var previousSibling = this.caretNode;
-                // console.log(this.range.startContainer.getHTML());
-                // if (!previousSibling) return;
-                // this.caretNode = previousSibling;
-                // this.caretOffset = -1;
-            }
             this.range.deleteContents();
         },
         end: function () {
@@ -87,7 +87,7 @@
                  */
                 parent = Note.findTopEmptyParent(this.caretNode);
 
-                if (parent.isStrictLine()) {
+                if (parent.isBlock()) {
                     /**
                      * Line will be empty, without even <br>,
                      * if the the line is typed with letters and then deleted,
@@ -99,8 +99,7 @@
                 } else {
                     this.caretNode = parent.previousSibling || parent.parentNode;
                     this.caretOffset = -1;
-                    console.log(parent)
-                    parent.parentNode.removeChild(parent);
+                    Note.removeNode(parent);
                 }
             }
             // Previous sibling is fc-wrapper

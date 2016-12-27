@@ -149,6 +149,7 @@ var FunctionMap = {
             return true;
         }
 
+        // Wrap lines without wrapper
         Note.normalize(Note._container);
 
         var line = Note.getCurrentLine();

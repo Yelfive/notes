@@ -564,7 +564,9 @@ var Note = {
         return normalized;
     },
     /**
-     * Find the most-top level empty-text Element recursively
+     * Find the most-top level empty-text
+     * or first parent block Element
+     * recursively
      */
     findTopEmptyParent: function (node) {
         if (node.getText().length !== 0) {
@@ -575,11 +577,19 @@ var Note = {
         }
         var parent = node;
         var _grand = parent.parentNode;
-        while (_grand instanceof Node && _grand.getText().length === 0 && Note._container !== _grand) {
+        while (
+        _grand instanceof Node
+        && _grand.getText().length === 0
+        && Note._container !== _grand
+            ) {
             parent = _grand;
+            if (parent.isBlock()) break;
             _grand = parent.parentNode;
         }
         return parent;
+    },
+    removeNode: function (node) {
+        node.remove();
     }
 };
 
@@ -631,6 +641,20 @@ ObjectHelper.each({
         }
 
         return true;
+    },
+    isBlock: function () {
+        var yes = false;
+        var $this = this;
+        ArrayHelper.each([
+            HTMLDivElement, HTMLLIElement, HTMLParagraphElement,
+            HTMLTableCellElement
+        ], function (k, node) {
+            if ($this instanceof node) {
+                yes = true;
+                return false;
+            }
+        });
+        return yes;
     }
 }, function (k, v) {
     Node.prototype[k] = v;

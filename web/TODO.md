@@ -9,6 +9,7 @@ TODO
     - delete one row
     - delete one column
     - table with indent: table may be sub block of a line
+    - |a:|b:| to create a right-aligned text, likely, |:a| to left-aligned, |a| to center-aligned
 - `-` to render a list
 - category
     - multiple
@@ -39,6 +40,10 @@ BUGS
 - table
     - press ArrowDown to move caret to the first line of the cell below(CL,RF)
         - If the cell is text-node-only, cannot locate the accurate offset where the care should be placed
+- `Backspace` to delete
+    - separator
+    - table
+    - block code
 - code
     - inline code
         - Arrow around inline code acts abnormally
