@@ -193,25 +193,7 @@ var FunctionMap = {
      * @returns {boolean} Whether to go on default
      */
     Backspace: function () {
-        /**
-         * Step 1: Command + A
-         * Step 2: Backspace -> delete
-         * Step 3: ```
-         * Step 4: Enter
-         * Step 5: Backspace, to delete the code block
-         *
-         * ====
-         *
-         *  1. delete the Elements like the inline or block code
-         *      1.1 collapsed
-         *      1.2 selection
-         */
         return Delete.run();
-        return Delete.extend([
-            'emptyBeforeDeletion',
-            'process',
-            'emptyAfterDeletion'
-        ]);
     },
     /**
      * Only valid for text node selected
@@ -227,6 +209,17 @@ var FunctionMap = {
         if (!content) {
             if (node === Note._container) return true;
             console.error('content is not even a {{Node}}:', node);
+        }
+
+        // Translate
+        if (content[caretAt - 1] === '\\') {
+            node.textContent = content.substr(0, caretAt - 1);
+            var translation = Note.createElement('span');
+            translation.innerText = '`';
+            node.after(translation);
+            translation.asWrapper().asEditable(false, true);
+            Caret.focusAt(translation.nextSibling, 0);
+            return false;
         }
 
         // CAUTION: ` is not yet in the node
@@ -250,11 +243,11 @@ var FunctionMap = {
         range.setEnd(node, endAt);
         var code = Note.createElement('code');
         code.className = 'fc fc-inline';
-        code.contentEditable = true;
+        code.asEditable(true);
         range.surroundContents(code);
 
         var codeWrapper = Note.createElement('span');
-        codeWrapper.contentEditable = false;
+        codeWrapper.asEditable(false, true);
         codeWrapper.asWrapper();
         range.surroundContents(codeWrapper);
 

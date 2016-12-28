@@ -10,7 +10,7 @@ var Key2Function = [
     {code: [CODE.CONTROL, CODE.ENTER], keys: ['Control', 'Enter'], action: 'createNewLineBelow', description: 'Create a new line below the caret'},
     {code: [CODE.ENTER], keys: ['Enter'], action: 'extend', description: 'Extend live template'},
     // {code: ['Backspace'], keys: ['Backspace'], action: 'delete', description: '', type: 'builtin'},
-    {code: [CODE.BACK_QUOTE], keys: ['BackQuote'], action: 'BackQuote', description: 'To create inline code area', type: 'builtin'},
+    {code: [CODE.BACK_QUOTE], keys: ['BackQuote'], action: 'BackQuote', description: 'To create inline code area, use backslash to translate when you really want to use a back quote(e.g. \\`)', type: 'builtin'},
     {code: [CODE.TAB], keys: ['Tab'], action: 'tab', description: 'Insert a tab(4 spaces by default)'},
     {code: [CODE.SHIFT, CODE.TAB], keys: ['Shift', 'Tab'], action: 'tabReduce', description: 'Insert a tab(4 spaces by default)'},
     {code: [CODE.CONTROL, CODE.Z], keys: ['Control', 'Z'], action: 'undo', description: 'Undo'},

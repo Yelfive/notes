@@ -675,10 +675,20 @@ ObjectHelper.each({
     },
     asWrapper: function () {
         this.dataset.wrapper = 1;
+        return this;
     },
     isWrapper: function () {
         var data = this.dataset;
         return data && data.wrapper == 1;
+    },
+    /**
+     * @param {Boolean} [editable=false]
+     * @param {Boolean} [insertSP=false]
+     */
+    asEditable: function (editable, insertSP) {
+        if (insertSP) this.after(document.createTextNode(SP));
+        this.contentEditable = !!editable;
+        return this;
     }
 }, function (k, v) {
     Node.prototype[k] = v;

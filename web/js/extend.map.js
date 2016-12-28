@@ -124,10 +124,10 @@ var Extend = {
         this.innerHTML = tag('table', tag('thead', tag('tr', head)) + tag('tbody', tag('tr', body)));
         // Make line un-editable, in case characters get in between <div> and <table>
         // <div> out of the table <table> ... </table> </div>
-        this.contentEditable = false;
+        this.asEditable(false);
         var table = this.firstElementChild;
         // Make the table editable
-        table.contentEditable = true;
+        table.asEditable(true);
         this.asWrapper();
 
         var firstTd = table.querySelector('tbody').querySelector('td');
@@ -142,7 +142,7 @@ var Extend = {
     },
     separator: function (type) {
         this.innerHTML = '<div class="fs"></div>';
-        this.contentEditable = false;
+        this.asEditable(false);
         this.asWrapper();
         FunctionMap.createNewLineBelow2Go();
         return false;

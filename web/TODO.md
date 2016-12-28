@@ -39,7 +39,8 @@ BUGS
 ===
 - table
     - press ArrowDown to move caret to the first line of the cell below(CL,RF)
-        - If the cell is text-node-only, cannot locate the accurate offset where the care should be placed
+        - If the cell is text-node-only and with multiple lines,
+          cannot locate the accurate offset where the care should be placed
 - code
     - inline code
         - Arrow around inline code acts abnormally
