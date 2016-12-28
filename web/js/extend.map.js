@@ -64,7 +64,10 @@ var Extend = {
             badge.className = 'code badge';
             code.prepend(badge);
         }
-        line.asWrapper();
+        line.asWrapper() // div
+            .querySelector('code').asEditable(false) // code
+            .querySelector('ul').asEditable(true); // ul
+
         Caret.focusAt(code.lastChild, 0);
         return false;
     },
