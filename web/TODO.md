@@ -42,8 +42,6 @@ BUGS
         - If the cell is text-node-only, cannot locate the accurate offset where the care should be placed
 - `Backspace` to delete
     - separator
-    - table
-    - block code
     - text like
         ```
          abcdefg
@@ -51,10 +49,14 @@ BUGS
         ^
         delete from here
         ```
-    - cannot delete inside table header <th>
+    - cannot delete empty line inside table header <th>
+    - cannot merge lines when multiple lines deleting
 - code
     - inline code
         - Arrow around inline code acts abnormally
+    - block
+        - code contentEditable=false
+        - ul contentEditable=true
 - undo manager
     - arrow movement will trigger UndoManager.transact
     - changes happened after keydown will not be recorded

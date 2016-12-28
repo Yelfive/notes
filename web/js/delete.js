@@ -11,7 +11,12 @@
 
         this.range = sel.getRangeAt(0);
 
-        if (this.range.collapsed) this.range.setStart(this.focusNode, offset > 1 ? offset - 1 : 0);
+        if (this.range.collapsed) {
+            this.multipleLines = false;
+            this.range.setStart(this.focusNode, offset > 1 ? offset - 1 : 0);
+        } else {
+            this.multipleLines = this.range.commonAncestorContainer.querySelector('div,li') ? true : false;
+        }
 
         // Record node & offset before deleteContents
         // or r.startContainer will be changed
@@ -92,6 +97,25 @@
             return false;
         },
         /**
+         * Try merging `from` into `to` as the appended
+         * Do nothing if `from` or `to` is not HTMLElement
+         * @param {HTMLElement} from
+         * @param {HTMLElement} to
+         * @param {Boolean} [focusTo=false] Whether to set caret to focus at `to`,
+         * it will not change default caret action if set false
+         * @private
+         */
+        _tryMergingAfter: function (from, to, focusTo) {
+            var children = from.childNodes;
+            if (from instanceof HTMLElement && to instanceof HTMLElement) {
+                if (focusTo) Caret.focusAt(to, -1);
+                if (children.length) ArrayHelper.each(children, function (k, node) {
+                    to.append(node);
+                });
+                Note.removeNode(from);
+            }
+        },
+        /**
          * When nothing is gonna be deleted,
          * select previous node to be deleted, if exists
          *
@@ -108,36 +132,38 @@
              *  press backspace here
              */
             var previousSibling = this.focusNode.previousElementSibling;
-            if (false === previousSibling instanceof HTMLElement) return false;
-
-
-            var data = previousSibling.dataset;
-            if (data && data.type == 'wrapper') {
-                // todo: merge
-                Caret.setSelected(previousSibling);
+            if (false === previousSibling instanceof HTMLElement) {
+                var current = Note.getCurrentLineStrictly(this.focusNode);
+                this._tryMergingAfter(current, current.previousElementSibling, true);
                 return false;
             }
 
-            if (!this.focusNode.isStrictLine()) return null;
-
-            var block = this._validBlockLine(previousSibling);
-
             /**
-             * <div><span contentEditable="false"><code contentEditable="true">inline code text</code></span>I</div>
-             *                                                                                               ^
-             *                                                                                               |
-             *                                                                                    press backspace here
+             *
+             * ##### Condition 1 #####
+             *
+             * <div><span contentEditable="false"><code contentEditable="true" data-type="wrapper">inline code text</code></span>I</div>
+             *                                                                                                                   ^
+             *                                                                                                                   |
+             *                                                                                                          press backspace here
+             *
+             * Short version:
+             * `inline code text` I xxx
+             *                    ^
+             *                    |
+             *                 Caret here
              * select the whole [contentEditable="false"] Element to notify the user
              * the whole block will be deleted
-             */
-            /**
+             *
+             * ##### Condition 2 #####
+             *
              * <div><table>...</table></div>
              * <div>I<div>
              *      ^
              *      |
              */
-            if (block) {
-                // todo merge
+            var data = previousSibling.dataset;
+            if (data && data.type == 'wrapper' || this._validBlockLine(previousSibling)) {
                 Caret.setSelected(previousSibling);
                 return false;
             }
@@ -153,13 +179,16 @@
                 this.caretNode = previousSibling;
                 this.caretOffset = -1;
             }
-            return null;
         },
         run: function () {
             this.range.deleteContents();
         },
         afterRun: function () {
             if (this.caretNode.getHTML() === '') this._emptyAfterDeletion();
+            if (this.multipleLines) {
+                var currentLine = Note.getCurrentLineStrictly(this.caretNode);
+                this._tryMergingAfter(currentLine.nextElementSibling, currentLine);
+            }
             this.end();
         },
         end: function () {

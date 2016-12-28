@@ -254,7 +254,8 @@ var Note = {
         } catch (e) {
             // revoke all when exception occurs
             this.revoke({keyCode: CODE.META_LEFT});
-            throw e;
+            console.error(e);
+            return false;
         }
     },
     revoke: function (event) {
@@ -303,14 +304,14 @@ var Note = {
     },
     /**
      * Find first block parent element
-     * - todo if param is given, the param should be instance of Node, and the first block contains that node will be returned
+     * - if param is given, the param should be instance of Node, and the first block contains that node will be returned
      * - if no param given, first block contains current caret will be returned
      * @param-internal {Node} node
      * @returns {Node|Null}
      */
-    getCurrentLine: function () {
+    getCurrentLine: function (node) {
         var sel = window.getSelection();
-        var line = sel.focusNode;
+        var line = node || sel.focusNode;
 
         // while (line && this._container.contains(line)) {
         while (line && line != this._container) {
@@ -322,9 +323,9 @@ var Note = {
         }
         return null;
     },
-    getCurrentLineStrictly: function () {
+    getCurrentLineStrictly: function (node) {
         var sel = window.getSelection();
-        var line = sel.focusNode;
+        var line = node || sel.focusNode;
         var _p;
         while (line && line !== this._container) {
             _p = line.parentNode;
@@ -658,7 +659,8 @@ ObjectHelper.each({
         var $this = this;
         ArrayHelper.each([
             HTMLDivElement, HTMLLIElement, HTMLParagraphElement,
-            HTMLTableElement, HTMLTableCellElement
+            HTMLTableElement, HTMLTableCellElement,
+            HTMLLIElement
         ], function (k, node) {
             if ($this instanceof node) {
                 yes = true;
