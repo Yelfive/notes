@@ -644,6 +644,9 @@ ObjectHelper.each({
         if (this instanceof Text) return this.textContent;
         if (this instanceof Element) return this.innerHTML;
     },
+    isSelfClosing: function () {
+        return /^(?:area|br|col|embed|hr|img|input|link|meta|param)$/i.test(this.nodeName);
+    },
     isExtensible: function () {
         var sel = window.getSelection();
         if (!sel.isCollapsed) return false;
@@ -672,6 +675,10 @@ ObjectHelper.each({
     },
     asWrapper: function () {
         this.dataset.wrapper = 1;
+    },
+    isWrapper: function () {
+        var data = this.dataset;
+        return data && data.wrapper == 1;
     }
 }, function (k, v) {
     Node.prototype[k] = v;

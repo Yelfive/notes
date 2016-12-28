@@ -255,7 +255,7 @@ var FunctionMap = {
 
         var codeWrapper = Note.createElement('span');
         codeWrapper.contentEditable = false;
-        codeWrapper.dataset.type = 'fc-wrapper';
+        codeWrapper.asWrapper();
         range.surroundContents(codeWrapper);
 
         var codeHTML = code.innerHTML;

@@ -27,7 +27,6 @@
     DeleteBase.prototype = {
         _emptyAfterDeletion: function () {
             var next, parent, previousSibling = this.caretNode.previousSibling;
-            var data;
             if (!previousSibling) {
                 /**
                  *  <div>abd<b>dI</b></div>
@@ -54,8 +53,7 @@
             }
             // Previous sibling is wrapper
             else if (previousSibling && !previousSibling.isEmpty()) {
-                data = previousSibling.dataset;
-                if (data && data.type === 'wrapper') {
+                if (previousSibling.isWrapper()) {
                     var sp = document.createTextNode(SP);
                     previousSibling.after(sp);
                     this.caretNode = sp;
@@ -67,8 +65,7 @@
             }
             // Next sibling is wrapper
             else if ((next = this.caretNode.nextSibling) && !next.isEmpty()) {
-                data = next.dataset;
-                if (data && data.type === 'wrapper') {
+                if (previousSibling.isWrapper()) {
                     next.before(document.createTextNode(SP));
                 }
                 this.caretNode = next;
@@ -83,7 +80,7 @@
             if (fragments.childElementCount) {
                 return false;
             }
-            return this.range.cloneContents().textContent.length === 0;
+            return fragments.textContent.length === 0;
         },
         /**
          *
@@ -133,7 +130,7 @@
              */
             var previousSibling = this.focusNode.previousElementSibling;
             if (false === previousSibling instanceof HTMLElement) {
-                var current = Note.getCurrentLineStrictly(this.focusNode);
+                var current = Note.getCurrentLine(this.focusNode);
                 this._tryMergingAfter(current, current.previousElementSibling, true);
                 return false;
             }
@@ -142,10 +139,13 @@
              *
              * ##### Condition 1 #####
              *
-             * <div><span contentEditable="false"><code contentEditable="true" data-type="wrapper">inline code text</code></span>I</div>
-             *                                                                                                                   ^
-             *                                                                                                                   |
-             *                                                                                                          press backspace here
+             * <div>
+             *     <span contentEditable="false">
+             *          <code contentEditable="true" data-type="wrapper">inline code text</code></span>I
+             * </div>
+             *                                                                                         ^
+             *                                                                                         |
+             *                                                                               press backspace here
              *
              * Short version:
              * `inline code text` I xxx
@@ -162,8 +162,7 @@
              *      ^
              *      |
              */
-            var data = previousSibling.dataset;
-            if (data && data.type == 'wrapper' || this._validBlockLine(previousSibling)) {
+            if (previousSibling.isWrapper() || this._validBlockLine(previousSibling) || previousSibling.isSelfClosing()) {
                 Caret.setSelected(previousSibling);
                 return false;
             }
@@ -184,9 +183,9 @@
             this.range.deleteContents();
         },
         afterRun: function () {
-            if (this.caretNode.getHTML() === '') this._emptyAfterDeletion();
-            if (this.multipleLines) {
-                var currentLine = Note.getCurrentLineStrictly(this.caretNode);
+            if (!this.caretNode.isSelfClosing() && this.caretNode.getHTML() === '') this._emptyAfterDeletion();
+            var currentLine = Note.getCurrentLine(this.caretNode);
+            if (this.multipleLines && currentLine) {
                 this._tryMergingAfter(currentLine.nextElementSibling, currentLine);
             }
             this.end();

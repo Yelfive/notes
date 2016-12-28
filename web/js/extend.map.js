@@ -64,6 +64,7 @@ var Extend = {
             badge.className = 'code badge';
             code.prepend(badge);
         }
+        line.asWrapper();
         Caret.focusAt(code.lastChild, 0);
         return false;
     },
@@ -127,7 +128,7 @@ var Extend = {
         var table = this.firstElementChild;
         // Make the table editable
         table.contentEditable = true;
-        table.asWrapper();
+        this.asWrapper();
 
         var firstTd = table.querySelector('tbody').querySelector('td');
         Caret.focusAt(firstTd, 0);
@@ -142,6 +143,7 @@ var Extend = {
     separator: function (type) {
         this.innerHTML = '<div class="fs"></div>';
         this.contentEditable = false;
+        this.asWrapper();
         FunctionMap.createNewLineBelow2Go();
         return false;
     },
