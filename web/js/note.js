@@ -64,8 +64,8 @@ var Note = {
     createEmptyLine: function (nodeName) {
         if (!nodeName || nodeName === '#text') nodeName = this.PARAGRAPH_TYPE == HTMLDivElement ? 'div' : 'li';
 
-        var node = document.createElement(nodeName);
-        node.appendChild(document.createElement('br'));
+        var node = Note.createElement(nodeName);
+        node.appendChild(Note.createElement('br'));
         return node;
     },
     parseHotKeys: function (map) {
@@ -540,7 +540,7 @@ var Note = {
         var normalized = false;
         ObjectHelper.each(nodes, function (k, nodeArray) {
             r = new Range();
-            wrapper = document.createElement('div');
+            wrapper = Note.createElement('div');
             ObjectHelper.each(nodeArray, function (index, textNode) {
                 // Break when the last element is LF
                 if (k === i && nodeArray.length == index + 1 && endWithLF) {
@@ -556,7 +556,7 @@ var Note = {
             });
             if (wrapper.innerText === '') {
                 wrapper.normalize();
-                wrapper.append(document.createElement('br'));
+                wrapper.append(Note.createElement('br'));
             }
             r.detach();
         });
@@ -590,6 +590,17 @@ var Note = {
     },
     removeNode: function (node) {
         node.remove();
+    },
+    /**
+     * @param {string} tagName
+     * @returns {Element}
+     */
+    createElement: function (tagName) {
+        var element = document.createElement(tagName);
+        // if (element.isBlock()) {
+        //     element.dataset.wrapper = 'true';
+        // }
+        return element;
     }
 };
 
@@ -655,13 +666,10 @@ ObjectHelper.each({
             }
         });
 
-        if (!yes) {
-            // <span contentEditable="false"><code contentEditable="true">Inline code</code></span>
-            if ($this.nodeName === 'CODE' && (' ' + $this.class + ' ').indexOf(' fc ')) {
-                return true;
-            }
-        }
         return yes;
+    },
+    asWrapper: function () {
+        this.dataset.wrapper = 1;
     }
 }, function (k, v) {
     Node.prototype[k] = v;

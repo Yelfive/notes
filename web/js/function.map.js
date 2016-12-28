@@ -248,12 +248,12 @@ var FunctionMap = {
         var range = new Range();
         range.setStart(node, startAt);
         range.setEnd(node, endAt);
-        var code = document.createElement('code');
+        var code = Note.createElement('code');
         code.className = 'fc fc-inline';
         code.contentEditable = true;
         range.surroundContents(code);
 
-        var codeWrapper = document.createElement('span');
+        var codeWrapper = Note.createElement('span');
         codeWrapper.contentEditable = false;
         codeWrapper.dataset.type = 'fc-wrapper';
         range.surroundContents(codeWrapper);
@@ -302,7 +302,6 @@ var FunctionMap = {
         } else {
             if (code == CODE.ARROW_DOWN) {
                 node = node.firstChild;
-                offset = -1;
             }
         }
         if (!node) {

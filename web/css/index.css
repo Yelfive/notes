@@ -5,7 +5,7 @@ html, body {
     font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
 }
 
-ul, div, html, body, span, code {
+ul, div, html, body, span, code, table {
     margin: 0;
     padding: 0;
     border: none;

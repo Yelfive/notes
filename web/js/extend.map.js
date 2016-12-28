@@ -59,7 +59,7 @@ var Extend = {
         line.innerHTML = '<code' + (indent ? ' style="margin-left:' + indent + 'rem"' : '') + ' class="' + cls + '"><ul><li><br></li></ul></code>';
         var code = line.firstChild;
         if (info[1]) { // language badge
-            var badge = document.createElement('div');
+            var badge = Note.createElement('div');
             badge.innerText = info[1];
             badge.className = 'code badge';
             code.prepend(badge);
@@ -119,9 +119,17 @@ var Extend = {
             head += tag('th', tag('div', info[i][0]), {align: info[i][1]});
             body += tag('td', tag('div', '<br>'), {align: info[i][1]});
         }
-        this.innerHTML = tag('table', tag('thead', tag('tr', head)) + tag('tbody', tag('tr', body)));
-        var firstTd = this.querySelector('tbody').querySelector('td');
 
+        this.innerHTML = tag('table', tag('thead', tag('tr', head)) + tag('tbody', tag('tr', body)));
+        // Make line un-editable, in case characters get in between <div> and <table>
+        // <div> out of the table <table> ... </table> </div>
+        this.contentEditable = false;
+        var table = this.firstElementChild;
+        // Make the table editable
+        table.contentEditable = true;
+        table.asWrapper();
+
+        var firstTd = table.querySelector('tbody').querySelector('td');
         Caret.focusAt(firstTd, 0);
 
         return false;

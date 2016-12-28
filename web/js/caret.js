@@ -53,8 +53,6 @@
         /**
          * - node is Text
          *      Set caret at the Text's given offset
-         * - node is Element
-         *      Set caret at the first Text child's given offset
          * @param {Node} node
          * @param {int} offset The offset of the Text Node
          */
@@ -69,7 +67,7 @@
                 start = this.findLastChildNode(node);
                 offset = start.textContent.length;
             } else {
-                start = node.firstChild ? node.firstChild : node;
+                start = node;
             }
             // set the caret
             selection.removeAllRanges();
