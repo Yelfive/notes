@@ -19,13 +19,60 @@
     }
 
     DeleteBase.prototype = {
+        _data: {},
+        break: false,
+        previousSiblingExists: function (goOn) {
+            this.break = !goOn;
+            // return goOn ? true : false;
+        },
+        /**
+         * <div></div>
+         * <div>I xxx</div>
+         *      ^
+         *      |
+         *  press backspace here
+         *  @return {null}
+         */
+        strictLineNoRange: function () {
+            var previousSibling = this._data.previousSibling;
+            this.range.selectNode(this.focusNode);
+            this.caretNode = previousSibling;
+            this.caretOffset = -1;
+            this.break = true;
+        },
+        toRange: function () {
+
+            /**
+             * <div><span contenteditable="false"><code contenteditable="true">inline code text</code></span>I</div>
+             *                                                                                               ^
+             *                                                                                               |
+             *                                                                                    press backspace here
+             * select the whole [contenteditable="false"] Element to notify the user
+             * the whole block will be deleted
+             */
+
+            // var data = previousSibling.data;
+            // todo, delete table, block code
+            Caret.setSelected(this._data.previousSibling);
+            // if (data && data.key === 'fc-wrapper' || previousSibling.firstChild instanceof HTMLTableElement) {
+            // } else if (!ObjectHelper.instanceOf(previousSibling, HTMLTableCellElement)) {
+
+            //     Note.removeNode(this.focusNode);
+            //     Caret.focusAt(previousSibling, -1);
+
+            // }
+            return false;
+        },
         /**
          * When nothing is gonna be deleted,
          * select previous node to be deleted, if exists
          *
          * CAUTION: This should be called when range is collapsed
          */
-        fromBeginning: function () {
+        fromBeginning: function (goOn) {
+            this.break = !goOn;
+            return;
+            return !!goOn;
             /**
              * <div></div>
              * <div>I xxx</div>
@@ -33,11 +80,8 @@
              *      |
              *  press backspace here
              */
-            var previousSibling = this.focusNode.previousSibling;
 
-            if (!ObjectHelper.instanceOf(previousSibling, HTMLElement)) return false;
-
-            if (this.focusNode.isStrictLine()) {
+            if (this.focusNode.isStrictLine() && previousSibling.firstElementChild.isBlock()) {
                 this.range.selectNode(this.focusNode);
                 this.caretNode = previousSibling;
                 this.caretOffset = -1;
@@ -54,7 +98,8 @@
 
             var data = previousSibling.data;
             // todo, delete table, block code
-            if (data && data.key === 'fc-wrapper'/* || previousSibling instanceof HTMLTableElement*/) {
+            console.log(previousSibling);
+            if (data && data.key === 'fc-wrapper' || previousSibling.firstChild instanceof HTMLTableElement) {
                 Caret.setSelected(previousSibling);
             } else if (!ObjectHelper.instanceOf(previousSibling, HTMLTableCellElement)) {
                 Note.removeNode(this.focusNode);
@@ -128,9 +173,40 @@
             fromBeginning: function () {
                 var fragments = this.range.cloneContents();
                 if (fragments.childElementCount) {
+                    // return false;
+                    return 0;
+                }
+                return this.range.cloneContents().textContent.length === 0 ? 1 : 0;
+                // return this.range.cloneContents().textContent.length === 0;
+            },
+            previousSiblingExists: function () {
+                var previousSibling = this.focusNode.previousSibling;
+
+                if (!ObjectHelper.instanceOf(previousSibling, HTMLElement)) return 0;
+                this._data.previousSibling = previousSibling;
+                return 1;
+            },
+            strictLineNoRange: function () {
+                if (!this.focusNode.isStrictLine()) return false;
+
+                if (this._data.previousSibling.childElementCount !== 1) return true;
+
+                var block = this._data.previousSibling.firstElementChild;
+
+                if (block.isBlock()) {
+                    this._data.block = block;
                     return false;
                 }
-                return this.range.cloneContents().textContent.length === 0;
+                return true;
+            },
+            toRange: function () {
+                // todo, delete table, block code
+
+                var previousSibling = this._data.previousSibling;
+                var data = previousSibling.data;
+                if (data && data.key === 'fc-wrapper' || this._data.block && this._data.block.isBlock()) return true;
+
+                return false;
             }
         },
         during: {
@@ -156,12 +232,13 @@
             var valid;
             var goOn = null;
             ObjectHelper.each(DeletionValidators, function (type, validators) {
+                $delete.break = false;
                 ObjectHelper.each(validators, function (name, method) {
                     valid = method === true ? true : method.call($delete);
                     console.info('%cDeletion check for ' + name + ' : ' + valid, 'color: red');
-                    if (valid) {
+                    if (valid !== false) {
                         goOn = $delete[name].call($delete, valid);
-                        if (ObjectHelper.isBoolean(goOn)) return false;
+                        if (ObjectHelper.isBoolean(goOn) || $delete.break) return false;
                     }
                 });
                 if (ObjectHelper.isBoolean(goOn)) return false;

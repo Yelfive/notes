@@ -44,6 +44,14 @@ BUGS
     - separator
     - table
     - block code
+    - text like
+        ```
+         abcdefg
+         ;lkjg
+        ^
+        delete from here
+        ```
+    - cannot delete inside table header <th>
 - code
     - inline code
         - Arrow around inline code acts abnormally

@@ -647,13 +647,20 @@ ObjectHelper.each({
         var $this = this;
         ArrayHelper.each([
             HTMLDivElement, HTMLLIElement, HTMLParagraphElement,
-            HTMLTableCellElement
+            HTMLTableElement, HTMLTableCellElement
         ], function (k, node) {
             if ($this instanceof node) {
                 yes = true;
                 return false;
             }
         });
+
+        if (!yes) {
+            // <span contentEditable="false"><code contentEditable="true">Inline code</code></span>
+            if ($this.nodeName === 'CODE' && (' ' + $this.class + ' ').indexOf(' fc ')) {
+                return true;
+            }
+        }
         return yes;
     }
 }, function (k, v) {
