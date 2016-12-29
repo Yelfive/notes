@@ -13,7 +13,7 @@
 
         this.range = sel.getRangeAt(0);
 
-        if (this.range.collapsed) {
+        if (this.range.collapsed || this.range.commonAncestorContainer instanceof Text) {
             this.multipleLines = false;
             this.range.setStart(this.focusNode, offset > 1 ? offset - 1 : 0);
         } else {
