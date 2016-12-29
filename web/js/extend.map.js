@@ -28,7 +28,8 @@
  *  isAutoIndent: Extend.isAutoIndent
  *  autoIndent: Extend.autoIndent
  *
- *  isTableCRLF: Extend.isTableCRLF
+ *  isBeforeUnEditable: Extend.isBeforeUnEditable
+ *  beforeUnEditable: Extend.beforeUnEditable
  * }}
  */
 var Extend = {
@@ -186,15 +187,36 @@ var Extend = {
         }
         return false;
     },
-    isInTable: function () {
-        return Caret.inTableCell();
-    },
-    inTable: function (cell) {
-        // Normalize
-        if (Note.normalize(cell)) {
-            return false;
+    // isInTable: function () {
+    //     return Caret.inTableCell();
+    // },
+    // inTable: function (cell) {
+    //     // Normalize
+    //     if (Note.normalize(cell)) {
+    //         return false;
+    //     }
+    //     var currentLine = Note.getCurrentLine();
+    //     return Note.extend(currentLine, ['autoIndent', 'codeBlock']);
+    // },
+    /**
+     * When the caret is in front of [contentEditable="false"] tags,
+     * the default behavior of `Enter` will be abnormally
+     * HOWEVER, a inserted space Text will do the favor, solve the problem
+     * @returns {Boolean|Node}
+     */
+    isBeforeUnEditable: function () {
+        var sel = window.getSelection();
+        if (sel.isCollapsed && Caret.inTheEnd(sel.focusNode)) {
+            var next = sel.focusNode.nextSibling;
+            if (next && next.contentEditable === "false") {
+                return next;
+            }
+            return sel.focusNode.nextSibling;
         }
-        var currentLine = Note.getCurrentLine();
-        return Note.extend(currentLine, ['autoIndent', 'codeBlock']);
+        return false;
+    },
+    beforeUnEditable: function (node) {
+        node.before(document.createTextNode(SP));
+        return true;
     }
 };

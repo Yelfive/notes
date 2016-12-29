@@ -176,10 +176,11 @@ var FunctionMap = {
 
         // Register and invoke the matched extending
         return Note.extend(line, [
-            'inTable',
-            'codeBlock', 'tableBlock', 'autoIndent', 'separator'
-            // 'tableCRLF'
+            // 'inTable',
+            'codeBlock', 'tableBlock', 'autoIndent', 'separator',
+            'beforeUnEditable'
         ]);
+        // return false;
     },
     afterExtend: function () {
         /*
