@@ -69,29 +69,23 @@
     }
 
     /**
-     * xxx -> undo
-     * /// -> redo
-     * ######## stack ########
-     | xxx *     |  <---- position = 5
-     | xxx * /// |  <---- position = 4
-     | xxx * /// |  <---- position = 3
-     | xxx * /// |  <---- position = 2
-     | xxx * /// |  <---- position = 1
-     |     * /// |  <---- position = 0
-     * #######################
-     * position
-     *  - 0 No undo
-     *  - stack.length No redo
-     * When an stack member comes in
-     * For the same action, both redo and undo should be declared
-     * Of which
-     * the redo is for the `position`
-     * the undo is for the `position+1`
-     * and the position should increment by 1 : `position++`
+     * - position
+     *      0 stands for the most origin state, no undo exists
+     *      `length - 1` for the latest state, no redo exists
+     * - length
+     *      length of the stack
+     * - stack
+     *      - html  {String}
+     *      - caret {Object}
      */
     function UndoManger() {
 
         var stack = [];
+
+        /**
+         * Recover certain state from undo stack
+         * @param {int} position
+         */
         stack.recover = function (position) {
             var stack = this[position];
             if (stack) stack.setHTML().setCaret();
@@ -199,7 +193,13 @@
 
         this.getState = function () {
             return {stack: stack, length: length, position: position};
-        }
+        };
+
+        this.clear = function () {
+            stack.splice(0, length - 1);
+            position = 0;
+            length = 1;
+        };
     }
 
     window.UndoManager = new UndoManger();

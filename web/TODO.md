@@ -43,14 +43,8 @@ BUGS
         - If the cell is text-node-only and with multiple lines,
           cannot locate the accurate offset where the care should be placed
 - undo manager
-    - arrow movement will trigger UndoManager.transact
-    - changes happened after keydown will not be recorded
-      by UndoManager
     - and API, clear, to clear the stack
 - tab
     - multiple lines selected
 - meta
     - meta key does not trigger event keyup, prevent all default
-- Chinese input
-    - when Chinese get input, keyCode of 229 will be triggered
-     and not being able to be revoked
