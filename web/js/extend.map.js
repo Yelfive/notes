@@ -38,13 +38,32 @@ var Extend = {
         var match = this.getText().match(/^(\s*)`{3,}([^`]*)\s*$/);
         if (!match) return false;
         var info = [match[1]];
-        switch (match[2]) {
+        var language = match[2].trim();
+        switch (language.toLowerCase()) {
             case 'js':
             case 'javascript':
                 info.push('JavaScript');
                 break;
+            case 'php':
+                info.push('PHP');
+                break;
+            case 'python':
+                info.push('Python');
+                break;
+            case 'java':
+                info.push('Java');
+                break;
+            case 'android':
+                info.push('Android');
+                break;
+            case 'ios':
+                info.push('iOS');
+                break;
+            case 'c#':
+                info.push('C#');
+                break;
             default:
-                info.push(match[2].trim());
+                info.push(language);
                 break;
         }
         return info;
@@ -65,9 +84,9 @@ var Extend = {
             badge.className = 'code badge';
             code.prepend(badge);
         }
-        line.asWrapper() // div
-            .querySelector('code').asEditable(false) // code
-            .querySelector('ul').asEditable(true); // ul
+        line.asWrapper().asEditable(false) // div
+            .querySelector('ul').asEditable(true) // ul
+            .previousElementSibling.asEditable(true); // badge
 
         Caret.focusAt(code.lastChild, 0);
         return false;
