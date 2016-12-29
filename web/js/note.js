@@ -602,6 +602,22 @@ var Note = {
         //     element.dataset.wrapper = 'true';
         // }
         return element;
+    },
+    /**
+     * Clear to remove all empty tags
+     * except for
+     * - Node.isWrapper
+     * @param {HTMLElement} element
+     */
+    cleanLine: function (element) {
+        if (element instanceof HTMLElement === false) return;
+
+        var caret = '';
+        ArrayHelper.each(element.childNodes, function (k, v) {
+            if (v.getHTML() === '' && !v.isWrapper()) {
+                Note.removeNode(v);
+            }
+        })
     }
 };
 

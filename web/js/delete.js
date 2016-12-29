@@ -9,6 +9,8 @@
         this.focusNode = sel.focusNode;
         var offset = sel.focusOffset;
 
+        if (0 === sel.rangeCount) return;
+
         this.range = sel.getRangeAt(0);
 
         if (this.range.collapsed) {
@@ -25,55 +27,129 @@
     }
 
     DeleteBase.prototype = {
-        _emptyAfterDeletion: function () {
-            var next, parent, previousSibling = this.caretNode.previousSibling;
-            if (!previousSibling) {
-                /**
-                 *  <div>abd<b>dI</b></div>
-                 *              ^
-                 *  The deletion will end into an empty <b></b>
-                 *  So the b Element should be deleted too
-                 */
-                parent = Note.findTopEmptyParent(this.caretNode);
-
-                if (parent.isBlock()) {
-                    /**
-                     * Line will be empty, without even <br>,
-                     * if the the line is typed with letters and then deleted,
-                     * thus the parent would be invisible in editor
-                     * and the subsequent typing will be in bare Note._container without line wrapper
-                     * Thus, append an <br> there
-                     */
-                    parent.append(Note.createElement('br'));
-                } else {
-                    this.caretNode = parent.previousSibling || parent.parentNode;
-                    this.caretOffset = -1;
-                    Note.removeNode(parent);
-                }
-            }
-            // Previous sibling is wrapper
-            else if (previousSibling && !previousSibling.isEmpty()) {
-                if (previousSibling.isWrapper()) {
-                    var sp = document.createTextNode(SP);
-                    previousSibling.after(sp);
-                    this.caretNode = sp;
-                    this.caretOffset = 0;
-                } else {
-                    this.caretNode = previousSibling;
-                    this.caretOffset = -1;
-                }
-            }
-            // Next sibling is wrapper
-            else if ((next = this.caretNode.nextSibling) && !next.isEmpty()) {
-                if (previousSibling.isWrapper()) {
-                    next.before(document.createTextNode(SP));
-                }
-                this.caretNode = next;
+        _hasPreviousSiblingAfterDeletion: function (previousSibling) {
+            if (previousSibling.isWrapper()) {
+                this.caretNode = document.createTextNode(SP);
                 this.caretOffset = 0;
+                previousSibling.after(this.caretNode);
             } else {
-                this.caretNode = this.caretNode.parentNode;
+                this.caretNode = previousSibling;
+                this.caretOffset = -1;
+            }
+        },
+        /**
+         * Handle only next sibling
+         * @returns {boolean}
+         * @private
+         */
+        _hasNextSiblingAfterDeletion: function (nextSibling) {
+            if (nextSibling.isWrapper()) {
+                this.caretNode = document.createTextNode(SP);
+                this.caretOffset = 0;
+                nextSibling.before(this.caretNode);
+            } else {
+                // do nothing
+            }
+        },
+        _hasNoSiblingAfterDeletion: function () {
+            var parent = Note.findTopEmptyParent(this.caretNode);
+            if (parent.isBlock()) {
+                parent.innerHTML = '<br>';
+                this.caretNode = parent;
+                this.caretOffset = 0;
+                return false;
+            }
+            this.caretNode = parent.previousSibling;
+            if (this.caretNode) {
+                if (this.caretNode.isWrapper()) {
+                    this.caretNode.after(document.createTextNode(SP));
+                }
+                this.caretOffset = -1;
+            } else {
+                this.caretNode = parent.nextSibling;
+                if (this.caretNode.isWrapper()) {
+                    var sp = document.createTextNode(SP);
+                    this.caretNode.before(sp);
+                    this.caretNode = sp;
+                }
                 this.caretOffset = 0;
             }
+            Note.removeNode(parent);
+        },
+        _emptyAfterDeletion: function () {
+            var previousSibling = this.caretNode.previousSibling;
+
+            /**
+             * 1.
+             * <div><b>aI</b><div>
+             *          ^
+             * <div><b>aI</b>bcd<div>
+             *          ^
+             * <div>abc<b>aI</b>bcd<div>
+             *             ^
+             * 2.
+             * <div>aI</div>
+             *       ^
+             * <div>aIb</div>
+             *       ^
+             * 3.
+             * <div><b>a</b>bI</div>
+             *               ^
+             * 4.
+             * <div>aI<code>text</code></div>
+             *       ^
+             */
+            /*
+             *  if (previous sibling is found) {
+             *      if (previous is wrapper) {
+             *          // insert a sp after previous sibling
+             *      } else {
+             *          // caret focus at previous sibling with offset -1
+             *      }
+             *  } else { // previousSibling is not found
+             *      // try next sibling
+             *      if (next sibling is found) {
+             *          if (next sibling is wrapper) {
+             *              // insert a sp before next sibling
+             *              return false;
+             *          }
+             *          // else do nothing
+             *      } else {
+             *          // find the most top-level empty parent, till the line Element
+             *          if (parent is block) {
+             *              // insert a <br> to prevent the block invisible
+             *          } else {
+             *              // find the previous sibling of the parent
+             *              if (parent previous sibling found) {
+             *                  Caret.focusAt(parent.previousSibling, -1);
+             *                  if (parent's previous sibling is wrapper) {
+             *                      insert sp after previous sibling of parent
+             *                  }
+             *              } else { // parent's next sibling found
+             *                  Caret.focusAt(parent.nextSibling, 0);
+             *                  if (next is wrapper) {
+             *                      insert SP before next sibling of parent
+             *                  }
+             *              }
+             *              // remove the parent
+             *          }
+             *      }
+             *
+             *  }
+             *
+             *
+             */
+
+            if (previousSibling instanceof Node) {
+                return this._hasPreviousSiblingAfterDeletion(previousSibling);
+            }
+
+            var nextSibling = this.caretNode.nextSibling;
+            if (nextSibling instanceof Node) {
+                return this._hasNextSiblingAfterDeletion(nextSibling);
+            }
+
+            this._hasNoSiblingAfterDeletion();
         },
         _fromBeginning: function () {
             var fragments = this.range.cloneContents();
@@ -105,10 +181,33 @@
         _tryMergingAfter: function (from, to, focusTo) {
             var children = from.childNodes;
             if (from instanceof HTMLElement && to instanceof HTMLElement) {
-                if (focusTo) Caret.focusAt(to, -1);
-                if (children.length) ArrayHelper.each(children, function (k, node) {
-                    to.append(node);
-                });
+
+                // Empty line has a bare <br> in the end, strip it
+                var br = to.querySelector('br');
+                if (br) Note.removeNode(br);
+
+                // Record first node of children,
+                // `children` is a live collection,
+                // the subsequent iteration will empty the collection
+                var firstNode = children[0];
+
+                var node;
+                while (node = children[0]) {
+                    to.append(node)
+                }
+
+                if (focusTo) {
+                    var caret, offset;
+                    var previous = firstNode.previousSibling;
+                    if (previous) {
+                        caret = previous;
+                        offset = -1;
+                    } else {
+                        caret = firstNode;
+                        offset = 0;
+                    }
+                    Caret.focusAt(caret, offset);
+                }
                 Note.removeNode(from);
             }
         },
@@ -184,14 +283,15 @@
         },
         afterRun: function () {
             if (!this.caretNode.isSelfClosing() && this.caretNode.getHTML() === '') this._emptyAfterDeletion();
-            var currentLine = Note.getCurrentLine(this.caretNode);
-            if (this.multipleLines && currentLine) {
-                this._tryMergingAfter(currentLine.nextElementSibling, currentLine);
-            }
             this.end();
         },
         end: function () {
+            var currentLine = Note.getCurrentLine(this.caretNode);
+            if (currentLine) { // Caret may disappear
+                if (this.multipleLines) this._tryMergingAfter(currentLine.nextElementSibling, currentLine);
+            }
             Caret.focusAt(this.caretNode, this.caretOffset);
+            if (currentLine) currentLine.normalize();
             this.range.detach();
         }
     };
@@ -206,6 +306,8 @@
          */
         run: function () {
             var $delete = new DeleteBase();
+
+            if (!$delete.range) return false;
 
             $delete.beforeRun() !== false
             && $delete.run() !== false

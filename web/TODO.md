@@ -34,6 +34,7 @@ TODO
         \` => <i>`</i>
         \\ => <i>\</i>
 - `Control + Alt + O` to search files
+- `#x1~#x6` to render h1~h6
 
 BUGS
 ===
@@ -44,6 +45,8 @@ BUGS
 - code
     - inline code
         - Arrow around inline code acts abnormally
+        - <div>I <code></code></div>
+        - <div> I<code></code></div>
     - block
         - code contentEditable=false
         - ul contentEditable=true
@@ -51,6 +54,7 @@ BUGS
     - arrow movement will trigger UndoManager.transact
     - changes happened after keydown will not be recorded
       by UndoManager
+    - and API, clear, to clear the stack
 - tab
     - multiple lines selected
 - meta
