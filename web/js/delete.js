@@ -247,7 +247,7 @@
              *                                                                               press backspace here
              *
              * Short version:
-             * `inline code text` I xxx
+             *  `inline code text`I xxx
              *                    ^
              *                    |
              *                 Caret here
@@ -265,15 +265,32 @@
                 Caret.setSelected(previousSibling);
                 return false;
             }
-            /**
-             * <div>some text or inline elements</div>
-             * <div>I</div>
-             *      ^
-             *      |
-             *     here
-             */
             else {
-                this.range.selectNode(this.focusNode);
+                /**
+                 * <div>some text or inline elements</div>
+                 * <div>I</div>
+                 *      ^
+                 *      |
+                 *     here
+                 */
+                if (this.focusNode.isEmpty()) {
+                    this.range.selectNode(this.focusNode);
+                }
+                /**
+                 *  only self-closing tag like <br> will do this
+                 *  I<br>some other text
+                 *  ^
+                 */
+                else {
+                    var firstChild = this.focusNode.firstChild;
+                    this.range.selectNode(firstChild);
+
+                    // Ensure the subsequent inline-code is surrounded by SP
+                    var secondChild = firstChild.nextSibling;
+                    if (secondChild && secondChild.isWrapper() && secondChild.querySelector('code')) {
+                        secondChild.before(document.createTextNode(SP));
+                    }
+                }
                 this.caretNode = previousSibling;
                 this.caretOffset = -1;
             }
