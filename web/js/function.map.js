@@ -61,9 +61,33 @@ var FunctionMap = {
             document.execCommand('insertText', false, tab.textContent);
         }
         // selection is not collapsed but its in the same line
-        else if (!sel.isCollapsed && line.contains(sel.anchorNode) && line.contains(sel.focusNode)) {
+        else if (line.contains(sel.anchorNode) && line.contains(sel.focusNode)) {
             line.prepend(tab);
         }
+        // selection endpoints are not in the same line
+        else {
+            Note.eachRangeLines(sel.getRangeAt(0), function (line) {
+                line.prepend(Note.createTabNode());
+            });
+        }
+    },
+    tabReduce: function () {
+        var match, offset, firstChild, range;
+
+        Note.eachRangeLines(window.getSelection().getRangeAt(0), function (line) {
+            line.normalize();
+            firstChild = line.firstChild;
+            if (firstChild instanceof Text === false) return;
+            match = firstChild ? firstChild.getHTML().match(/^ {1,4}/) : null;
+            if (!match) return;
+
+            offset = match[0].length;
+            range = new Range();
+            range.setStart(firstChild, 0);
+            range.setEnd(firstChild, offset);
+            range.deleteContents();
+            range.detach();
+        });
     },
     undo: function () {
         // document.execCommand('undo');
@@ -71,43 +95,6 @@ var FunctionMap = {
     },
     redo: function () {
         window.UndoManager.redo();
-    },
-    tabReduce: function () {
-        var line = Note.getCurrentLine();
-        var html = line.getHTML();
-        var reg = new RegExp('^(' + Note.tabString() + '){1,}');
-        if (!reg.test(html)) return false;
-
-        /**
-         * 1. collapsed
-         * 2. not-collapsed, one line
-         * 3. not-collapsed, multiple lines
-         */
-        var sel = window.getSelection();
-        var isCollapsed = sel.isCollapsed;
-        if (
-            isCollapsed
-            // when the selection is not collapsed and in the same line
-            || !isCollapsed && line.contains(sel.anchorNode) && line.contains(sel.focusNode)
-        ) {
-            /*
-             * Clean up all the text nodes under this element
-             * (merge adjacent, remove empty)
-             */
-            line.normalize();
-            var spaceNode = line instanceof Text ? line : line.firstChild;
-            var range = new Range();
-            range.setStart(spaceNode, 0);
-            range.setEnd(spaceNode, 4);
-            range.deleteContents();
-            /*
-             * The caret will be automatically set, unless
-             * - the spaceNode contains noting(empty string)
-             */
-            if (!spaceNode.textContent) Caret.focusAt(spaceNode, 0)
-        } else {
-            // todo: anchor and focus is not in the same line
-        }
     },
     /**
      * @param-internal {boolean} $return Whether to return the created line

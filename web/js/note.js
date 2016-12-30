@@ -307,7 +307,7 @@ var Note = {
      * - if param is given, the param should be instance of Node, and the first block contains that node will be returned
      * - if no param given, first block contains current caret will be returned
      * @param-internal {Node} node
-     * @returns {Node|Null}
+     * @returns {HTMLElement|Node|Null}
      */
     getCurrentLine: function (node) {
         var sel = window.getSelection();
@@ -333,6 +333,22 @@ var Note = {
             line = _p;
         }
         return null;
+    },
+    /**
+     * Iterate the lines of the given range
+     * @param {Range} range
+     * @param {Function} callback
+     */
+    eachRangeLines: function (range, callback) {
+        var startLine = Note.getCurrentLine(range.startContainer);
+        var endLine = Note.getCurrentLine(range.endContainer);
+        while (startLine && Note._container.contains(startLine)) {
+            callback(startLine);
+
+            if (startLine === endLine) break;
+
+            startLine = startLine.nextElementSibling;
+        }
     },
     /**
      * Check if the last line is empty line, otherwise, create new line
