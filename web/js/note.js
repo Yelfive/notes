@@ -412,10 +412,16 @@ var Note = {
     extend: function (line, validations) {
         var validationMethod, result, info;
         var goOn = true;
+        var caretInTheEnd = Caret.inTheEnd();
         ObjectHelper.each(validations, function (k, v) {
             validationMethod = 'is' + v.ucfirst();
             if (Extend[validationMethod] instanceof Function) {
-                info = Extend[validationMethod].call(line);
+                // Break when validator needs to be in the middle
+                // By default, all extending behavior should be called when caret is in the end
+                if (!caretInTheEnd && v !== 'beforeUnEditable') {
+                    return true;
+                }
+                info = Extend[validationMethod].call(line, caretInTheEnd);
                 if (!info) return true;
                 console.info('Perform extend for ' + v, 'with info: ', info);
                 if (!Extend[v]) {

@@ -84,15 +84,16 @@ var Extend = {
         if (info[1]) cls += 'with-badge ' + info[1];
         line.innerHTML = '<code' + (indent ? ' style="margin-left:' + indent + 'rem"' : '') + ' class="' + cls + '"><ul><li><br></li></ul></code>';
         var code = line.firstChild;
+        var badge;
         if (info[1]) { // language badge
-            var badge = Note.createElement('div');
+            badge = Note.createElement('div');
             badge.innerText = info[1];
             badge.className = 'code badge';
             code.prepend(badge);
         }
         line.asWrapper().asEditable(false) // div
-            .querySelector('ul').asEditable(true) // ul
-            .previousElementSibling.asEditable(true); // badge
+            .querySelector('ul').asEditable(true); // ul
+        if(badge) badge.asEditable(true); // badge
 
         Caret.focusAt(code.lastChild, 0);
         return false;
@@ -250,5 +251,15 @@ var Extend = {
     beforeUnEditable: function (node) {
         node.before(document.createTextNode(SP));
         return true;
+    },
+    isTitle: function () {
+        var sel = window.getSelection();
+        var line = Note.getCurrentLineStrictly();
+        if (Caret.inTheEnd(line)) {
+
+        }
+    },
+    title: function () {
+
     }
 };

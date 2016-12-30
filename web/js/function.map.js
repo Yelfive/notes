@@ -4,13 +4,6 @@
 
 'use strict';
 
-/**
- *
- * @type {{save: FunctionMap.save, tab: FunctionMap.tab, undo: FunctionMap.undo, redo: FunctionMap.redo, tabReduce: FunctionMap.tabReduce, createNewLineBelow: FunctionMap.createNewLineBelow, createNewLineBelow2Go: FunctionMap.createNewLineBelow2Go, toUpper: FunctionMap.toUpper, toLower: FunctionMap.toLower, extend: FunctionMap.extend, afterExtend: FunctionMap.afterExtend, Backspace: FunctionMap.Backspace, BackQuote: FunctionMap.BackQuote, tableActions: FunctionMap.tableActions}}
- * @return
- *  - empty to prevent default event
- *  - non-empty to go on default event
- */
 (function () {
     function insertText(text) {
         document.execCommand('insertText', false, text);
@@ -42,6 +35,13 @@
         }
     };
 
+    /**
+     *
+     * @type {{save: FunctionMap.save, tab: FunctionMap.tab, undo: FunctionMap.undo, redo: FunctionMap.redo, tabReduce: FunctionMap.tabReduce, createNewLineBelow: FunctionMap.createNewLineBelow, createNewLineBelow2Go: FunctionMap.createNewLineBelow2Go, toUpper: FunctionMap.toUpper, toLower: FunctionMap.toLower, extend: FunctionMap.extend, afterExtend: FunctionMap.afterExtend, Backspace: FunctionMap.Backspace, BackQuote: FunctionMap.BackQuote, tableActions: FunctionMap.tableActions}}
+     * @return
+     *  - empty to prevent default event
+     *  - non-empty to go on default event
+     */
     window.FunctionMap = {
         save: function () {
             var $id = $('#note-id');
