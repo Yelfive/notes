@@ -19,5 +19,6 @@ var Key2Function = [
     {code: [CODE.ALT, CODE.ARROW], keys: ['Alt', 'Arrow'], action: 'tableActions', description: 'Move to previous column in a table'},
     {code: [CODE.BACKSPACE], keys: ['Control', 'Backspace'], action: 'Backspace', type: 'builtin'},
     {code: [CODE.ARROW], keys: ['Arrow'], action: 'Arrow', type: 'builtin'},
+    {code: [CODE.CONTROL, CODE.A], keys: ['Control', 'A'], action: 'SelectAll', type: 'builtin'},
     {code: [CODE.CONTROL, CODE.E], keys: ['Control', 'E'], action: 'deleteLines', description: 'Delete line(s) selected'}
 ];

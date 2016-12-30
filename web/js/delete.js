@@ -9,7 +9,7 @@
         this.focusNode = sel.focusNode;
         var offset = sel.focusOffset;
 
-        if (0 === sel.rangeCount) return;
+        if (0 === sel.rangeCount || sel.focusNode.contains(Note._container)) return;
 
         this.range = sel.getRangeAt(0);
 
@@ -302,13 +302,25 @@
             if (!this.caretNode.isSelfClosing() && this.caretNode.getHTML() === '') this._emptyAfterDeletion();
             this.end();
         },
-        end: function () {
+        _normalize: function () {
             var currentLine = Note.getCurrentLine(this.caretNode);
             if (currentLine) { // Caret may disappear
                 if (this.multipleLines) this._tryMergingAfter(currentLine.nextElementSibling, currentLine);
             }
             Caret.focusAt(this.caretNode, this.caretOffset);
             if (currentLine) currentLine.normalize();
+        },
+        _ensureContainerWithLine: function () {
+            var container = Note._container;
+            if (false == container.firstElementChild instanceof HTMLDivElement) {
+                var line = Note.createEmptyLine();
+                container.prepend(line);
+                Caret.focusAt(line, 0);
+            }
+        },
+        end: function () {
+            this._normalize();
+            this._ensureContainerWithLine();
             this.range.detach();
         }
     };

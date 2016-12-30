@@ -58,7 +58,7 @@ var Note = {
         this._container.innerHTML = this.PARAGRAPH_TYPE == HTMLLIElement ? HtmlHelper.tag('ul', this.createEmptyLine().outerHTML) : this.createEmptyLine().outerHTML;
     },
     /**
-     * @param {String} nodeName
+     * @param {String=} nodeName
      * @returns {Element}
      */
     createEmptyLine: function (nodeName) {

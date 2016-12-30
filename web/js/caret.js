@@ -80,6 +80,14 @@
             if (!data) data = [node, 0];
             this.focusAt.apply(this, data);
         },
+        /**
+         * - Only first param given
+         *      Select the whole node
+         * @param {Node} begin
+         * @param {int=} beginOffset
+         * @param {Node=} end
+         * @param {int=} endOffset
+         */
         setSelected: function (begin, beginOffset, end, endOffset) {
             var sel = getSelection();
             var range = new window.Range();

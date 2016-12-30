@@ -10,9 +10,6 @@ TODO
 - `-` to render a list
 - category
     - multiple
-- `Ctrl + E` to delete
-    - One line
-    - Multiple lines
 - `Ctrl + D` to duplicate
     - One line
     - Multiple lines

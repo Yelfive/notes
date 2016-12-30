@@ -389,5 +389,14 @@ var FunctionMap = {
             offset = 0;
         }
         Caret.focusAtText(node, offset);
+    },
+    SelectAll: function () {
+        var r = new Range();
+        var sel = window.getSelection();
+
+        r.setStartBefore(Note._container.firstElementChild);
+        r.setEndAfter(Note._container.lastElementChild);
+        sel.removeAllRanges();
+        sel.addRange(r);
     }
 };
