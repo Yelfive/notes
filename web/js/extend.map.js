@@ -93,7 +93,7 @@ var Extend = {
         }
         line.asWrapper().asEditable(false) // div
             .querySelector('ul').asEditable(true); // ul
-        if(badge) badge.asEditable(true); // badge
+        if (badge) badge.asEditable(true); // badge
 
         Caret.focusAt(code.lastChild, 0);
         return false;
@@ -253,13 +253,16 @@ var Extend = {
         return true;
     },
     isTitle: function () {
-        var sel = window.getSelection();
         var line = Note.getCurrentLineStrictly();
-        if (Caret.inTheEnd(line)) {
-
-        }
+        if (!Caret.inTheEnd(line)) return false;
+        var match = line.getHTML().match(/^#{1,6}/);
+        return match ? match[0].length : false;
     },
-    title: function () {
-
+    title: function (count) {
+        var line = Note.getCurrentLine();
+        var html = line.innerHTML.substr(count).trim() || '<br>';
+        line.innerHTML = '<h' + count + '>' + html + '</h' + count + '>';
+        Caret.focusAt(line, -1);
+        FunctionMap.createNewLineBelow();
     }
 };

@@ -201,7 +201,7 @@
             return Note.extend(line, [
                 // 'inTable',
                 'codeBlock', 'tableBlock', 'autoIndent', 'separator',
-                'beforeUnEditable'
+                'beforeUnEditable', 'title'
             ]);
             // return false;
         },
