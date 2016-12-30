@@ -177,18 +177,15 @@
          * @return {boolean} True to go on default event, to get typed in
          */
         this.overwrite = function (code) {
-            if (Note.isCharacterKey(code)
-                && !Note.isKeyDown(CODE.CONTROL)
-                && !Note.isKeyDown(CODE.ALT)
-            ) {
-                this.keyDownCount++;
-
-                if (this.keyDownCount > this.keyDownInterval || code === CODE.BACKSPACE) {
-                    this.transact();
-                }
-
-                return code !== CODE.BACK_QUOTE; // back quote(`) has extra functionality
+            if (!Note.isCharacterKey(code) || Note.isKeyDown(CODE.CONTROL) || Note.isKeyDown(CODE.ALT)) {
+                return false;
             }
+            this.keyDownCount++;
+
+            if (this.keyDownCount > this.keyDownInterval || code === CODE.BACKSPACE) {
+                this.transact();
+            }
+            return !ArrayHelper.in(code, [CODE.BRACKET_LEFT, CODE.QUOTE, CODE.BACK_QUOTE, CODE.NINE, CODE.COMMA]);
         };
 
         this.getState = function () {

@@ -108,6 +108,18 @@
             sel.removeAllRanges();
             sel.addRange(range);
             range.detach();
+        },
+        inMultipleLines: function () {
+            var sel = window.getSelection();
+
+            if (sel.isCollapsed || sel.rangeCount === 0) return false;
+
+            var range = sel.getRangeAt(0);
+            if (range.commonAncestorContainer instanceof Text) {
+                return false;
+            } else {
+                return range.commonAncestorContainer.querySelector('div,li') !== null;
+            }
         }
     };
 

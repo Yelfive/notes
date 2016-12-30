@@ -13,12 +13,8 @@
 
         this.range = sel.getRangeAt(0);
 
-        if (this.range.collapsed || this.range.commonAncestorContainer instanceof Text) {
-            this.multipleLines = false;
-            this.range.setStart(this.focusNode, offset > 1 ? offset - 1 : 0);
-        } else {
-            this.multipleLines = this.range.commonAncestorContainer.querySelector('div,li') ? true : false;
-        }
+        if (this.range.collapsed) this.range.setStart(this.focusNode, offset > 1 ? offset - 1 : 0);
+        this.multipleLines = Caret.inMultipleLines();
 
         // Record node & offset before deleteContents
         // or r.startContainer will be changed

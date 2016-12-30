@@ -62,6 +62,12 @@ var Extend = {
             case 'c#':
                 info.push('C#');
                 break;
+            case 'html':
+                info.push('HTML');
+                break;
+            case 'css':
+                info.push('CSS');
+                break;
             default:
                 info.push(language);
                 break;

@@ -14,13 +14,10 @@ TODO
     - One line
     - Multiple lines
 - `>` To represent a block quote, if it's in at the beginning of a line
-- `Ctrl + A` to select all
 - `Control + B` to strong
 - `Control + U` to underline
 - `Control + I` to italic
-- `Control + E` to delete current line
 - images and links(&lt;a>&lt;/a>)
-- type in `' " ( [` should wrap the selection, if there is one
 - type in " \\\` " should end into \<i>\`\</i> element to avoid intending to type in back quote by end with a code inline block
 
         \` => <i>`</i>
