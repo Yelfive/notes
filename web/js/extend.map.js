@@ -108,17 +108,24 @@ var Extend = {
                 leftColon = c[0] === ':';
                 rightColon = c[length - 1] === ':';
 
-                if (leftColon && rightColon) {  // |:title:|
+                /* |:title:| */
+                if (leftColon && rightColon) {
                     cells[k] = [c.substr(1, length - 2)];
                     cells[k].push('center');
                     return true;
-                } else if (!leftColon && !rightColon) { // |title|
+                }
+                /* |title| */
+                else if (!leftColon && !rightColon) {
                     cells[k] = [c];
-                    cells[k].push('center')
-                } else if (rightColon) { // |title:|
+                    cells[k].push('left')
+                }
+                /* |title:| */
+                else if (rightColon) {
                     cells[k] = [c.substr(0, length - 1)];
                     cells[k].push('right');
-                } else { // |:title|
+                }
+                /* |:title| */
+                else {
                     cells[k] = [c.substr(1)];
                     cells[k].push('left');
                 }

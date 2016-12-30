@@ -58,7 +58,7 @@ var Note = {
         this._container.innerHTML = this.PARAGRAPH_TYPE == HTMLLIElement ? HtmlHelper.tag('ul', this.createEmptyLine().outerHTML) : this.createEmptyLine().outerHTML;
     },
     /**
-     * @param nodeName
+     * @param {String} nodeName
      * @returns {Element}
      */
     createEmptyLine: function (nodeName) {
@@ -333,6 +333,41 @@ var Note = {
             line = _p;
         }
         return null;
+    },
+    /**
+     * @param {Node} node
+     * @param {int} offset
+     * @return {Array} [dst_node, dst_offset] The absolute node compare to given `offset`
+     */
+    findAbsolutePosition: function (node, offset) {
+        if (!offset) return [node, offset];
+
+        var child = node.firstChild;
+
+        var len, data, dst_node;
+
+        while (child) {
+            len = 0;
+            if (child instanceof Element) {
+                if (data = this.findAbsolutePosition(child, offset)) {
+                    dst_node = data[0];
+                    len = data[1];
+                }
+            } else if (child instanceof Text) { // Text
+                dst_node = child;
+                len = child.textContent.length;
+            }
+
+            if (len >= offset) {
+                return [dst_node, offset];
+            } else {
+                offset -= len;
+            }
+            child = child.nextSibling;
+        }
+        // When the last element is check, and still not feeds the required offset
+        // Returns the last element add the length of the element
+        return dst_node ? [dst_node, len] : false;
     },
     /**
      * Iterate the lines of the given range

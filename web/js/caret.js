@@ -74,6 +74,12 @@
             range.setStart(start, offset);
             selection.addRange(range);
         },
+        focusAtText: function (node, offset) {
+            var data = Note.findAbsolutePosition(node, offset);
+
+            if (!data) data = [node, 0];
+            this.focusAt.apply(this, data);
+        },
         setSelected: function (begin, beginOffset, end, endOffset) {
             var sel = getSelection();
             var range = new window.Range();

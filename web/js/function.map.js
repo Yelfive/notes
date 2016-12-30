@@ -365,5 +365,29 @@ var FunctionMap = {
 
         }
         return true;
+    },
+    deleteLines: function () {
+        var sel = getSelection();
+        var r = sel.getRangeAt(0);
+        if (r.startContainer === Note._container) return false;
+        var offset = sel.focusOffset;
+        var startLine = Note.getCurrentLine(r.startContainer);
+        var endLine = Note.getCurrentLine(r.endContainer);
+        var node = endLine.nextElementSibling || startLine.previousElementSibling;
+
+        r.setStartBefore(startLine);
+        r.setEndAfter(endLine);
+        r.deleteContents();
+        r.detach();
+
+        if (!node || node === Note._container) {
+            node = Note._container.firstElementChild;
+            if (!node) {
+                node = Note.createEmptyLine(startLine.nodeName);
+                Note._container.append(node);
+            }
+            offset = 0;
+        }
+        Caret.focusAtText(node, offset);
     }
 };

@@ -1,7 +1,5 @@
 TODO
 ====
-- `Alt+Shift + Arrow*` to move line(s) in table
-- `Tab` to indent or out indent multiple lines
 - individual container child `Text node` should be considered as line
 - table
     - create new row
@@ -9,7 +7,6 @@ TODO
     - delete one row
     - delete one column
     - table with indent: table may be sub block of a line
-    - |a:|b:| to create a right-aligned text, likely, |:a| to left-aligned, |a| to center-aligned
 - `-` to render a list
 - category
     - multiple
@@ -19,8 +16,6 @@ TODO
 - `Ctrl + D` to duplicate
     - One line
     - Multiple lines
-- `Ctrl + Z` to undo
-- `Ctrl + Y` to redo
 - `>` To represent a block quote, if it's in at the beginning of a line
 - `Ctrl + A` to select all
 - `Control + B` to strong
@@ -35,6 +30,8 @@ TODO
         \\ => <i>\</i>
 - `Control + Alt + O` to search files
 - `#x1~#x6` to render h1~h6
+- Highlight code block
+- `Esc` to activate md-alike edit mode, like vim editing MarkDown
 
 BUGS
 ===
@@ -42,9 +39,5 @@ BUGS
     - press ArrowDown to move caret to the first line of the cell below(CL,RF)
         - If the cell is text-node-only and with multiple lines,
           cannot locate the accurate offset where the care should be placed
-- undo manager
-    - and API, clear, to clear the stack
-- tab
-    - multiple lines selected
 - meta
     - meta key does not trigger event keyup, prevent all default
