@@ -23,7 +23,6 @@ TODO
         \` => <i>`</i>
         \\ => <i>\</i>
 - `Control + Alt + O` to search files
-- `#x1~#x6` to render h1~h6
 - Highlight code block
 - `Esc` to activate md-alike edit mode, like vim editing MarkDown
 
