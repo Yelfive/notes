@@ -418,7 +418,7 @@ var Note = {
             if (Extend[validationMethod] instanceof Function) {
                 // Break when validator needs to be in the middle
                 // By default, all extending behavior should be called when caret is in the end
-                if (!caretInTheEnd && v !== 'beforeUnEditable') {
+                if (!caretInTheEnd && !Extend.allowMiddle(v)) {
                     return true;
                 }
                 info = Extend[validationMethod].call(line, caretInTheEnd);
@@ -688,7 +688,7 @@ ObjectHelper.each({
      * @returns {boolean}
      */
     isLine: function () {
-        return ArrayHelper.in(this.nodeName, ['P', 'DIV', 'LI']);
+        return this instanceof HTMLHeadingElement || ArrayHelper.in(this.nodeName, ['P', 'DIV', 'LI']);
     },
     isStrictLine: function () {
         return this.parentNode === Note._container;

@@ -28,6 +28,17 @@ TODO
 
 BUGS
 ===
+- title
+    - press `Enter` in middle of title, then the backspace
+        ```
+         h1 title
+
+         h1
+         title
+        ^
+        |
+        Caret here, press backspace
+        ```
 - table
     - press ArrowDown to move caret to the first line of the cell below(CL,RF)
         - If the cell is text-node-only and with multiple lines,

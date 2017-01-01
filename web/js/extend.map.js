@@ -33,6 +33,15 @@
  * }}
  */
 var Extend = {
+    /**
+     * Check if the extension is valid
+     * when the caret is in the middle
+     * @param {String} type
+     * @returns {boolean}
+     */
+    allowMiddle: function (type) {
+        return type === 'beforeUnEditable';
+    },
     /** Code Block */
     isCodeBlock: function () {
         var match = this.getText().match(/^(\s*)`{3,}([^`]*)\s*$/);
@@ -228,8 +237,7 @@ var Extend = {
     //     if (Note.normalize(cell)) {
     //         return false;
     //     }
-    //     var currentLine = Note.getCurrentLine();
-    //     return Note.extend(currentLine, ['autoIndent', 'codeBlock']);
+    //     return Note.extend(this, ['autoIndent', 'codeBlock']);
     // },
     /**
      * When the caret is in front of [contentEditable="false"] tags,
@@ -259,10 +267,21 @@ var Extend = {
         return match ? match[0].length : false;
     },
     title: function (count) {
-        var line = Note.getCurrentLine();
-        var html = line.innerHTML.substr(count).trim() || '<br>';
-        line.innerHTML = '<h' + count + '>' + html + '</h' + count + '>';
-        Caret.focusAt(line, -1);
-        FunctionMap.createNewLineBelow();
+        var html = this.innerHTML.substr(count).trim() || '<br>';
+        this.innerHTML = '<h' + count + '>' + html + '</h' + count + '>';
+        Caret.focusAt(this, -1);
+        // FunctionMap.createNewLineBelow();
+    },
+    /**
+     * `Enter` pressed in title
+     */
+    isInTitle: function () {
+        return this.querySelector('h1,h2,h3,h4,h5,h6') != false;
+    },
+    inTitle: function () {
+        // `this` is a HTMLHeadingElement(h1~h6)
+        // so that, the parent should be cloned,
+        // not the heading element
+        FunctionMap.createNewLineBelow2Go(this.parentNode);
     }
 };

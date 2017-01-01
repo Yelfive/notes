@@ -115,6 +115,6 @@ ul, div, html, body, span, code, table {
     left: 0;
 }
 
-#content-box h1, h2, h3, h4, h5, h6 {
+h1, h2, h3, h4, h5, h6 {
     margin: 0.5rem 0;
 }

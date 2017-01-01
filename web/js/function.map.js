@@ -129,10 +129,11 @@
         },
         /**
          * @param {Boolean} [setFocus = false] Whether to focus at the end of the line
+         * @param {Text|HTMLElement} [currentLine = Note.getCurrentLine()]
          * @returns {Array|Boolean}
          */
-        createNewLineBelow: function (setFocus) {
-            var currentLine = Note.getCurrentLine();
+        createNewLineBelow: function (setFocus, currentLine) {
+            if (!currentLine) currentLine = Note.getCurrentLine();
             if (!currentLine) return true;
 
             var newLine = Note.createEmptyLine(currentLine.nodeName);
@@ -149,16 +150,7 @@
             }
         },
         createNewLineBelow2Go: function (line) {
-            this.createNewLineBelow(true);
-            return;
-            var data = line instanceof Node ? line : this.createNewLineBelow(true);
-            var newLine = data[0];
-            var length = data[1];
-            if (newLine) {
-                Caret.focusAt(newLine.firstChild, length ? length : 0);
-            } else {
-                return true;
-            }
+            this.createNewLineBelow(true, line);
         },
         toUpper: function () {
             return Note.changeCase(false);
@@ -201,7 +193,10 @@
             return Note.extend(line, [
                 // 'inTable',
                 'codeBlock', 'tableBlock', 'autoIndent', 'separator',
-                'beforeUnEditable', 'title'
+                'beforeUnEditable',
+                'title',
+                 'inTitle',
+                // 'createNewLine'
             ]);
             // return false;
         },
