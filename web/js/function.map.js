@@ -149,6 +149,9 @@
                 length ? Caret.focusAt(spaces, text.length) : Caret.focusAt(newLine, 0);
             }
         },
+        /**
+         * @param {HTMLElement} line
+         */
         createNewLineBelow2Go: function (line) {
             this.createNewLineBelow(true, line);
         },
@@ -195,7 +198,7 @@
                 'codeBlock', 'tableBlock', 'autoIndent', 'separator',
                 'beforeUnEditable',
                 'title',
-                 'inTitle',
+                 'inTitle'
                 // 'createNewLine'
             ]);
             // return false;

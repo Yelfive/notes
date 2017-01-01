@@ -270,13 +270,15 @@ var Extend = {
         var html = this.innerHTML.substr(count).trim() || '<br>';
         this.innerHTML = '<h' + count + '>' + html + '</h' + count + '>';
         Caret.focusAt(this, -1);
-        // FunctionMap.createNewLineBelow();
+        FunctionMap.createNewLineBelow2Go(this);
+        return false;
     },
     /**
      * `Enter` pressed in title
      */
     isInTitle: function () {
-        return this.querySelector('h1,h2,h3,h4,h5,h6') != false;
+        // `this` is a block, and HTMLHeadingElement is also a block
+        return this instanceof HTMLHeadingElement;
     },
     inTitle: function () {
         // `this` is a HTMLHeadingElement(h1~h6)
