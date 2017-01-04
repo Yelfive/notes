@@ -28,20 +28,20 @@ TODO
 
 BUGS
 ===
-- title
-    - press `Enter` in middle of title, then the backspace
-        ```
-         h1 title
 
-         h1
-         title
-        ^
-        |
-        Caret here, press backspace
-        ```
 - table
     - press ArrowDown to move caret to the first line of the cell below(CL,RF)
         - If the cell is text-node-only and with multiple lines,
           cannot locate the accurate offset where the care should be placed
+    - delete multiple lines over different cells result in exception
+    - cannot use Arrow(Up/Down) to move caret from cell line of table inside to that of table outside
+        |   title   |     title    |
+        |           |    |t1|t2|   |
+
 - meta
     - meta key does not trigger event keyup, prevent all default
+
+- UndoManager
+    - Caret change should trigger transactOnChange,
+      but not every caret changes count,
+      only significant ones count

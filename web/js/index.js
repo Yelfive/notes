@@ -8,16 +8,12 @@
  * function: save => function () {perform the save}
  */
 $(function () {
-    Note.init({container: '#content-box', keyMap: Key2Function});
-    $('#content-box').keydown(function (e) {
-        /*
-         * callback should return bool to suggest whether event runs default action
-         * - true: perform the default
-         * - false: prevent the default
-         */
-        Note.invoke(e) || e.preventDefault();
-    }).keyup(function (e) {
-        Note.revoke(e);
+    Note.init({container: '#content-box', keyMap: Key2Function})
+        .registerEvents();
+
+    var nodes = Note._container.querySelectorAll('th,td');
+    ObjectHelper.each(nodes, function (k, v) {
+        v.innerHTML = '<div>' + k + '</div>'
     });
 
     window.refreshList = function () {
@@ -49,9 +45,5 @@ $(function () {
             }
         });
     });
-
-    window.onbeforeunload = function () {
-        return false;
-    }
 
 });

@@ -166,7 +166,7 @@
             return false;
         },
         /**
-         * Try merging `from` into `to` as the appended
+         * Try merging `from` into `to` as the appended(after)
          * Do nothing if `from` or `to` is not HTMLElement
          * @param {HTMLElement} from
          * @param {HTMLElement} to
@@ -175,6 +175,8 @@
          * @private
          */
         _tryMergingAfter: function (from, to, focusTo) {
+            if (!from || !to)  return;
+
             var children = from.childNodes;
             if (from instanceof HTMLElement && to instanceof HTMLElement) {
 
@@ -226,8 +228,13 @@
             var previousSibling = this.focusNode.previousElementSibling;
             if (false === previousSibling instanceof HTMLElement) {
                 var current = Note.getCurrentLine(this.focusNode);
-                this._tryMergingAfter(current, current.previousElementSibling, true);
-                return false;
+                var previousLine = current.previousElementSibling;
+                if (previousLine && previousLine.isWrapper()) {
+                    previousSibling = previousLine;
+                } else {
+                    this._tryMergingAfter(current, current.previousElementSibling, true);
+                    return false;
+                }
             }
 
             /**
@@ -291,8 +298,46 @@
                 this.caretOffset = -1;
             }
         },
+        _advancedDelete: function () {
+            if (this.range.cloneContents().querySelector('td,th') === null) {
+                return false;
+            }
+            /**
+             * if row selected, delete row
+             * if table selected, delete table
+             * if cell selected, empty table
+             */
+            var data = Note.getRangeNodes(this.range);
+            var length = data.nodes.length;
+            var node;
+
+            console.log(data);
+            var r = new Range();
+            for (var i = 0; i < length; i++) {
+                node = data.nodes[i];
+                if (node instanceof HTMLTableCellElement) {
+                    node.innerHTML = Note.createEmptyLine().outerHTML;
+                    continue;
+                }
+                r.selectNode(node);
+
+                /* START */
+                // Cannot use if ... else ...
+                // There may be only one node, for `start=end`
+                if (i === 0) r.setStart(node, data.startOffset);
+                if (i === length - 1) r.setEnd(node, data.endOffset);
+                /* END */
+
+                if (false === r.collapsed) r.deleteContents();
+            }
+            r.detach();
+        },
         run: function () {
-            this.range.deleteContents();
+            // `this.range.deleteContents()` will delete all full-contained nodes
+            // e.g. <td>
+            if (false === this._advancedDelete()) {
+                this.range.deleteContents();
+            }
         },
         afterRun: function () {
             if (!this.caretNode.isSelfClosing() && this.caretNode.getHTML() === '') this._emptyAfterDeletion();

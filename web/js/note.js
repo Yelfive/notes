@@ -52,6 +52,28 @@ var Note = {
         this.firstLine();
         // Check if necessary configure is set
         this.validate();
+        return this;
+    },
+    registerEvents: function () {
+        this._container.onkeydown = function (e) {
+            /*
+             * callback should return bool to suggest whether event runs default action
+             * - true: perform the default
+             * - false: prevent the default
+             */
+            Profile.start();
+            Note.invoke(e) || e.preventDefault();
+            Profile.end();
+            Profile.show();
+        };
+
+        document.onkeyup = function (e) {
+            Note.revoke(e);
+        };
+
+        window.onbeforeunload = function () {
+            return false;
+        }
     },
     firstLine: function () {
         if (this._container.childElementCount) return;
@@ -239,7 +261,7 @@ var Note = {
 
             var action = FunctionMap[map.action];
             if (action && action instanceof Function) {
-                console.info('Performing action', map.action);
+                console.log('%cPerforming action: ' + map.action, 'color: pink');
                 UndoManager.transactOnChange();
                 var performDefault = action.call(FunctionMap, event);
                 UndoManager.transactOnChange();
@@ -659,6 +681,77 @@ var Note = {
         //     element.dataset.wrapper = 'true';
         // }
         return element;
+    },
+    findParent: function (node, tag) {
+        var parent = node;
+        tag = tag.toUpperCase();
+        while (Note._container.contains(parent)) {
+            if (parent.nodeName === tag) {
+                return parent;
+            } else {
+                parent = parent.parentNode;
+            }
+        }
+        return null;
+    },
+    /**
+     *
+     * @param {Range} range
+     * @returns {{}}
+     */
+    getRangeNodes: function (range) {
+        var start = range.startContainer.childNodes[range.startOffset];
+        var end = range.endContainer.childNodes[range.endOffset];
+        var data = {nodes: []};
+        if (start) {
+            data.startOffset = 0;
+        } else {
+            start = range.startContainer;
+            data.startOffset = range.startOffset
+        }
+
+        if (end) {
+            data.endOffset = 0;
+        } else {
+            end = range.endContainer;
+            data.endOffset = range.endOffset;
+        }
+
+        var nodes = data.nodes;
+        nodes.push(start);
+
+        // In case start and end are the same,
+        // no need to perform recursive check
+        if (start == end) {
+            return data;
+        }
+
+        var next;
+        var startParent = start;
+        while (!startParent.contains(end)) {
+            next = startParent.nextSibling;
+            while (next) {
+                if (next === end) {
+                    nodes.push(next);
+                    break;
+                } else if (next.contains(end)) {
+                    next = next.firstChild;
+                } else {
+                    nodes.push(next);
+                    next = next.nextSibling;
+                }
+            }
+            if (next === end) {
+                break;
+            }
+            startParent = startParent.parentNode;
+        }
+        return data;
+    },
+    emptyLine: function (node, lineNodeName) {
+        var line = this.createEmptyLine(lineNodeName);
+        node.innerHTML = '';
+        node.append(line);
     }
 };
 
@@ -746,6 +839,25 @@ ObjectHelper.each({
         if (insertSP) this.after(document.createTextNode(SP));
         this.contentEditable = !!editable;
         return this;
+    },
+    /**
+     *
+     * @param {string} selector
+     * @param {Node} [till=Note._container]
+     * @returns {*}
+     */
+    findParent: function (selector, till) {
+        var node = this, parent = null;
+        var tag = selector.toUpperCase();
+        if (false === till instanceof Node) till = Note._container;
+
+        while (node !== till && !node.isBlock()) {
+            if (node.nodeName === tag) {
+                parent = node;
+            }
+            node = node.parentNode;
+        }
+        return parent;
     }
 }, function (k, v) {
     Node.prototype[k] = v;

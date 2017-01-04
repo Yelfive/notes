@@ -32,6 +32,8 @@
                 Caret.setSelected(startPunctuation.nextSibling, 0, endPunctuation, 0);
             }
             return false;
+        },
+        toggleFontStyle: function (tag) {
         }
     };
 
@@ -105,20 +107,22 @@
         tabReduce: function () {
             var match, offset, firstChild, range;
 
-            Note.eachRangeLines(window.getSelection().getRangeAt(0), function (line) {
-                line.normalize();
-                firstChild = line.firstChild;
-                if (firstChild instanceof Text === false) return;
-                match = firstChild ? firstChild.getHTML().match(/^ {1,4}/) : null;
-                if (!match) return;
+            Note.eachRangeLines(window.getSelection().getRangeAt(0),
+                /** @param {HTMLElement} line */
+                function (line) {
+                    line.normalize();
+                    firstChild = line.firstChild;
+                    if (firstChild instanceof Text === false) return;
+                    match = firstChild ? firstChild.getHTML().match(/^ {1,4}/) : null;
+                    if (!match) return;
 
-                offset = match[0].length;
-                range = new Range();
-                range.setStart(firstChild, 0);
-                range.setEnd(firstChild, offset);
-                range.deleteContents();
-                range.detach();
-            });
+                    offset = match[0].length;
+                    range = new Range();
+                    range.setStart(firstChild, 0);
+                    range.setEnd(firstChild, offset);
+                    range.deleteContents();
+                    range.detach();
+                });
         },
         undo: function () {
             // document.execCommand('undo');
@@ -133,6 +137,10 @@
          * @returns {Array|Boolean}
          */
         createNewLineBelow: function (setFocus, currentLine) {
+            if (typeof setFocus === 'object') {
+                setFocus = arguments[1];
+                currentLine = arguments[2];
+            }
             if (!currentLine) currentLine = Note.getCurrentLine();
             if (!currentLine) return true;
 
@@ -150,10 +158,10 @@
             }
         },
         /**
-         * @param {HTMLElement} line
+         * @param {HTMLElement} [line = Note.getCurrentLine()]
          */
         createNewLineBelow2Go: function (line) {
-            this.createNewLineBelow(true, line);
+            this.createNewLineBelow(true, line instanceof Node ? line : null);
         },
         toUpper: function () {
             return Note.changeCase(false);
@@ -197,9 +205,8 @@
                 // 'inTable',
                 'codeBlock', 'tableBlock', 'autoIndent', 'separator',
                 'beforeUnEditable',
-                'title',
-                 'inTitle'
-                // 'createNewLine'
+                'title', 'inTitle',
+                'cloneLine'
             ]);
             // return false;
         },
@@ -306,13 +313,16 @@
             }
 
             if (!node) {
-                var currentLine = Note.getCurrentLineStrictly();
-                if (!currentLine) return false;
+                var currentLine = Note.getCurrentLine();
+                while (!node && currentLine !== Note._container) {
+                    currentLine = Note.getCurrentLine(currentLine.parentNode);
+                    if (!currentLine) return false;
 
-                if (code == CODE.ARROW_LEFT || code == CODE.ARROW_UP) {
-                    node = currentLine.previousElementSibling;
-                } else {
-                    node = currentLine.nextElementSibling;
+                    if (code == CODE.ARROW_LEFT || code == CODE.ARROW_UP) {
+                        node = currentLine.previousElementSibling;
+                    } else {
+                        node = currentLine.nextElementSibling;
+                    }
                 }
             } else {
                 if (code == CODE.ARROW_DOWN) {
@@ -442,6 +452,18 @@
         },
         AngleBracketLeft: function () {
             Helper.insertPunctuation('<>');
+        },
+        toggleBolder: function () {
+            document.execCommand('bold');
+        },
+        toggleItalic: function () {
+            document.execCommand('italic');
+        },
+        toggleUnderline: function () {
+            document.execCommand('underline');
+        },
+        toggleStrikeThrough: function () {
+            document.execCommand('strikeThrough');
         }
     };
 })();

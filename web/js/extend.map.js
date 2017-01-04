@@ -285,5 +285,13 @@ var Extend = {
         // so that, the parent should be cloned,
         // not the heading element
         FunctionMap.createNewLineBelow2Go(this.parentNode);
+    },
+    isCloneLine: function () {
+        // always clone line when `Enter` without extension
+        return true;
+    },
+    cloneLine: function () {
+        FunctionMap.createNewLineBelow2Go();
+        return false;
     }
 };
