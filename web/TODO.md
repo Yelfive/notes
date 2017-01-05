@@ -2,9 +2,9 @@ TODO
 ====
 - individual container child `Text node` should be considered as line
 - table
-    - create new row
+    - `Control + '+'`create new row
     - create new column
-    - delete one row
+    - `Control + '-'` delete one row
     - delete one column
     - table with indent: table may be sub block of a line
 - `-` to render a list
@@ -14,9 +14,6 @@ TODO
     - One line
     - Multiple lines
 - `>` To represent a block quote, if it's in at the beginning of a line
-- `Control + B` to strong
-- `Control + U` to underline
-- `Control + I` to italic
 - images and links(&lt;a>&lt;/a>)
 - type in " \\\` " should end into \<i>\`\</i> element to avoid intending to type in back quote by end with a code inline block
 
@@ -25,6 +22,8 @@ TODO
 - `Control + Alt + O` to search files
 - Highlight code block
 - `Esc` to activate md-alike edit mode, like vim editing MarkDown
+- `Control + Shift + Enter` to create a line above current
+- double click to render a textarea of code, for copy
 
 BUGS
 ===

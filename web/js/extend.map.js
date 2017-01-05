@@ -40,7 +40,8 @@ var Extend = {
      * @returns {boolean}
      */
     allowMiddle: function (type) {
-        return type === 'beforeUnEditable';
+        return ArrayHelper.in(type, ['beforeUnEditable', 'autoIndent']);
+        // return type === 'beforeUnEditable';
     },
     /** Code Block */
     isCodeBlock: function () {
@@ -212,7 +213,7 @@ var Extend = {
             newLine.prepend(spaces);
             this.after(newLine);
             Caret.focusAt(spaces, text.length);
-        } else {
+        } else { // in the middle
             var range = new Range();
             var sel = window.getSelection();
             range.selectNode(this);
@@ -220,10 +221,10 @@ var Extend = {
             range.insertNode(spaces);
             // Move the DocumentFragment from range to variable
             var fragment = range.extractContents();
-            this.after(fragment);
             // The fragment becomes a node after being inserted
-            // Since the fragment ends with </li>, it will be automatically prepend <li> after inserted
-            Caret.focusAt(this.nextSibling, text.length);
+            // If the fragment ends with </li>, it will be automatically prepend <li> after inserted
+            this.after(fragment);
+            Caret.focusAt(spaces, text.length);
             // Detach for performance reason
             range.detach();
         }

@@ -59,7 +59,8 @@
         focusAt: function (node, offset) {
             // To merge adjacent, remove empty
             // In case the text nodes is malformed
-            node.normalize();
+            if (node instanceof HTMLElement) node.normalize();
+
             var selection = window.getSelection();
             var range = new Range();
             var start;
