@@ -49,8 +49,9 @@ ul, div, html, body, span, code, table {
 #content-box {
     height: 80%;
     width: 99%;
-    white-space: pre;
+    white-space: pre-wrap;
     padding: 0.2rem;
+    line-height: 1.4rem;
 }
 
 #content-box p {
@@ -98,6 +99,7 @@ ul, div, html, body, span, code, table {
 #content-box .fc-inline {
     display: inline;
     padding: 0 0.2rem;
+    white-space: pre;
 }
 
 #content-box .fs {
@@ -121,4 +123,8 @@ h1, h2, h3, h4, h5, h6 {
 
 div {
     min-height: 1rem;
+}
+
+ol {
+    padding-left: 2rem;
 }

@@ -24,10 +24,26 @@ TODO
 - `Esc` to activate md-alike edit mode, like vim editing MarkDown
 - `Control + Shift + Enter` to create a line above current
 - double click to render a textarea of code, for copy
+- use number-dot structure to start a <ol> list
+    - use `Enter` to create a new <li>
+    - use `Shift + Enter` to start a new line within a <li>
+    - use `Shift + Tab` to outdent to end a <ol> list
 
 BUGS
 ===
+- Punctuation close: press close-punctuation,
+    check if there's a close already places after the caret,
+    if there is, just move the caret after the close-punctuation
+    ```
+    e.g.
 
+    'abcdI'
+         ^
+         press ' here, will trigger the caret from I to after the '
+
+    'abcd'I
+          ^
+    ```
 - table
     - press ArrowDown to move caret to the first line of the cell below(CL,RF)
         - If the cell is text-node-only and with multiple lines,
