@@ -128,3 +128,7 @@ div {
 ol {
     padding-left: 2rem;
 }
+
+.f-translation {
+    display: inline-block;
+}

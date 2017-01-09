@@ -14,6 +14,7 @@ var Key2Function = [
     {code: [CODE.BACKSPACE], keys: ['Control', 'Backspace'], action: 'Backspace', type: 'builtin'},
     {code: [CODE.ARROW], keys: ['Arrow'], action: 'Arrow', type: 'builtin'},
     {code: [CODE.CONTROL, CODE.A], keys: ['Control', 'A'], action: 'SelectAll', type: 'builtin'},
+    {code: [CODE.BACKSLASH], keys: ['\\'], action: 'Translate', type: 'builtin'},
     {code: [CODE.BACK_QUOTE], keys: ['BackQuote'], action: 'BackQuote', description: 'To create inline code area, use backslash to translate when you really want to use a back quote(e.g. \\`)', type: 'builtin'},
 
     /* Custom-able */

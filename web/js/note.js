@@ -752,6 +752,76 @@ var Note = {
         var line = this.createEmptyLine(lineNodeName);
         node.innerHTML = '';
         node.append(line);
+    },
+    /**
+     *
+     * @param {int} code
+     * @returns {boolean} Whether translate peformed
+     */
+    translate: function (code) {
+        var sel = window.getSelection();
+        var range = sel.getRangeAt(0);
+        if (!sel.isCollapsed) {
+            range.deleteContents();
+        }
+
+        range = sel.getRangeAt(0);
+        if (range instanceof HTMLElement) {
+            return false;
+        }
+
+        var wrapper = Note.createElement('span');
+        wrapper.className = 'f-translation';
+
+        var char;
+        var translated = false;
+        range.startContainer.normalize();
+        // check next character
+        if (code == CODE.BACKSLASH) {
+            // range.startContainer
+            try {
+                range.setEnd(range.endContainer, range.endOffset + 1);
+            } catch (e1) {
+
+            }
+            char = range.cloneContents().textContent;
+            if (char === '\\' || char === '|' || char === '`' || char === '>') {
+                translated = true;
+            }
+        }
+        if (translated === false) {
+            // check with char ahead
+            try {
+                if (!range.collapsed) { // called `setEnd` above
+                    range.setEnd(range.endContainer, range.endOffset - 1);
+                }
+                range.setStart(range.startContainer, range.startOffset - 1);
+            } catch (e) {
+                return false;
+            }
+
+            if (range.cloneContents().textContent !== '\\') {
+                return false;
+            }
+            if (code == CODE.BACK_QUOTE) {
+                char = '`';
+            } else if (code == CODE.BACKSLASH) {
+                char = this.isKeyDown(CODE.SHIFT) ? '|' : '\\';
+            } else {
+                return false;
+            }
+
+            translated = true;
+        }
+
+        if (translated === false) return false;
+
+        range.deleteContents();
+        wrapper.innerHTML = char;
+        range.insertNode(wrapper);
+        wrapper.asWrapper(2).asEditable(false, true);
+        Caret.focusAt(wrapper.nextSibling, 0);
+        return true;
     }
 };
 
@@ -823,20 +893,36 @@ ObjectHelper.each({
 
         return yes;
     },
-    asWrapper: function () {
-        this.dataset.wrapper = 1;
+    /**
+     * @param {int} [code=1]
+     *  - 1
+     *      will be selected before deleted
+     *  - 2
+     *      will be deleted directly
+     * @returns {asWrapper}
+     */
+    asWrapper: function (code) {
+        this.dataset.wrapper = code || 1;
         return this;
     },
     isWrapper: function () {
         var data = this.dataset;
-        return data && data.wrapper == 1;
+        return data && data.wrapper > 0;
+    },
+    canDeleteDirectly: function () {
+        var data = this.dataset;
+        return data && data.wrapper == 2;
     },
     /**
      * @param {Boolean} [editable=false]
      * @param {Boolean} [insertSP=false]
+     * @return {HTMLElement|*}
      */
     asEditable: function (editable, insertSP) {
-        if (insertSP) this.after(document.createTextNode(SP));
+        if (insertSP) {
+            this.after(document.createTextNode(SP));
+            this.before(document.createTextNode(SP));
+        }
         this.contentEditable = !!editable;
         return this;
     },

@@ -238,6 +238,14 @@
             }
 
             /**
+             * <span data-wrapper="2">`</span>I
+             *                                ^
+             *                              caret
+             */
+            if (previousSibling.isWrapper() && previousSibling.canDeleteDirectly()) {
+                this.range.selectNode(previousSibling);
+            }
+            /**
              *
              * ##### Condition 1 #####
              *
@@ -264,7 +272,7 @@
              *      ^
              *      |
              */
-            if (previousSibling.isWrapper() || this._validBlockLine(previousSibling) || previousSibling.isSelfClosing()) {
+            else if (previousSibling.isWrapper() || this._validBlockLine(previousSibling) || previousSibling.isSelfClosing()) {
                 Caret.setSelected(previousSibling);
                 return false;
             }

@@ -185,7 +185,7 @@
             if (this.keyDownCount > this.keyDownInterval || code === CODE.BACKSPACE) {
                 this.transact();
             }
-            return !ArrayHelper.in(code, [CODE.BRACKET_LEFT, CODE.QUOTE, CODE.BACK_QUOTE, CODE.NINE, CODE.COMMA]);
+            return !ArrayHelper.in(code, [CODE.BRACKET_LEFT, CODE.QUOTE, CODE.BACK_QUOTE, CODE.NINE, CODE.COMMA, CODE.BACKSLASH]);
         };
 
         this.getState = function () {

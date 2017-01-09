@@ -228,7 +228,7 @@
          * Only valid for text node selected
          * @return {boolean|null}
          */
-        BackQuote: function () {
+        BackQuote: function (event) {
             var sel = window.getSelection();
             var node = sel.focusNode;
             var caretAt = sel.focusOffset;
@@ -242,12 +242,15 @@
 
             // Translate
             if (content[caretAt - 1] === '\\') {
-                node.textContent = content.substr(0, caretAt - 1);
-                var translation = Note.createElement('span');
-                translation.innerText = '`';
-                node.after(translation);
-                translation.asWrapper().asEditable(false, true);
-                Caret.focusAt(translation.nextSibling, 0);
+                // node.textContent = content.substr(0, caretAt - 1) + content.substr(caretAt);
+                // var translation = Note.createElement('span');
+                // translation.innerText = '`';
+                // node.after(translation);
+                // translation.asWrapper().asEditable(false, true);
+                // Caret.focusAt(translation.nextSibling, 0);
+
+                Note.translate(event.keyCode);
+
                 return false;
             }
 
@@ -464,6 +467,9 @@
         },
         toggleStrikeThrough: function () {
             document.execCommand('strikeThrough');
+        },
+        Translate: function (event) {
+            return !Note.translate(event.keyCode);
         }
     };
 })();

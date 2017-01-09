@@ -31,6 +31,13 @@ TODO
 
 BUGS
 ===
+- data-wrapper="1/2" should not generate SPs if there is non-empty chars around
+    ```
+        "ab <span data-wrapper="1/2">abcd</span>"
+           ^
+         here
+    ```
+
 - Punctuation close: press close-punctuation,
     check if there's a close already places after the caret,
     if there is, just move the caret after the close-punctuation
