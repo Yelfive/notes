@@ -353,9 +353,9 @@
         },
         _ensureContainerWithLine: function () {
             var container = Note._container;
-            if (false == container.firstElementChild instanceof HTMLDivElement) {
+            if (container.childElementCount === 0) {
                 var line = Note.createEmptyLine();
-                container.prepend(line);
+                container.appendChild(line);
                 Caret.focusAt(line, 0);
             }
         },
