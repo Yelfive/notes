@@ -7,7 +7,8 @@ TODO
     - `Control + '-'` delete one row
     - delete one column
     - table with indent: table may be sub block of a line
-- `-` to render a list
+- `-` to render an unordered list
+- `1./2.` to render an ordered list
 - category
     - multiple
 - `Ctrl + D` to duplicate
@@ -67,3 +68,5 @@ BUGS
     - Caret change should trigger transactOnChange,
       but not every caret changes count,
       only significant ones count
+- Enter
+    Ctrl + A -> Enter, cannot empty the selection with a blank line

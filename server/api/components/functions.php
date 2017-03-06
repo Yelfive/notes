@@ -33,30 +33,3 @@ function restful($name = null, $defaultValue = null)
         ? Yii::$app->request->getBodyParams()
         : Yii::$app->request->getBodyParam($name, $defaultValue);
 }
-
-function config($name, $value = '')
-{
-//    Yii::$app->id . '.config';
-    $redis = Yii::$app->redis;
-    if ($name && $value) {
-        return $redis->HSET('config', $name, $value);
-    }
-    if ($name && !$value) {
-        if ($redis->HEXISTS('config', $name)) {
-            return $redis->HGET('config', $name);
-        } else {
-            return false;
-        }
-    }
-
-}
-
-/**
- * print
- * @param array|string|object $array
- */
-function p($array)
-{
-    echo '<pre>';
-    print_r($array);
-}
