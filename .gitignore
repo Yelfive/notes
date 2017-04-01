@@ -1,3 +1,4 @@
-#phpstrom
+# phpstorm
 .idea
+
 test\.*

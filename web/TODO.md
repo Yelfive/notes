@@ -32,6 +32,8 @@ TODO
 
 BUGS
 ===
+- tab
+    tab to indent multiple lines
 - data-wrapper="1/2" should not generate SPs if there is non-empty chars around
     ```
         "ab <span data-wrapper="1/2">abcd</span>"
@@ -40,7 +42,7 @@ BUGS
     ```
 
 - Punctuation close: press close-punctuation,
-    check if there's a close already places after the caret,
+    - check if there's a close already places after the caret,
     if there is, just move the caret after the close-punctuation
     ```
     e.g.
@@ -52,6 +54,10 @@ BUGS
     'abcd'I
           ^
     ```
+    - Auto-append punctuation happens when
+        - the line is empty
+        - only with invisible characters
+        - in code block but not in comment
 - table
     - press ArrowDown to move caret to the first line of the cell below(CL,RF)
         - If the cell is text-node-only and with multiple lines,
