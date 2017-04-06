@@ -3,31 +3,40 @@
  */
 
 var gulp = require('gulp');
-var browserify = require('browserify');
-var source = require('vinyl-source-stream');
-var plumber = require('gulp-plumber');
+var browserify = require('./gulps/browserify');
+var config = require('./gulps/read-config')('gulps/config.json');
 var log = require('./gulps/log');
-var config = require('./gulpconfig');
 
 gulp.task('default', function () {
-    gulp.watch('src/*.js', function (event) {
-        log(event.type, log.FG_PURPLE);
-        var match = event.path.match(/([-\w]+)\.js$/);
-        if (!match) log('Oops! File should match *.js: ' + event.path, log.FG_RED);
-        var filename = match[1];
-        // var filename = 'index';
-        browserify('src/' + filename + '.js')
-            .transform('babelify', {
-                presets: ['es2015', 'react'], generatorOpts: config
+    gulp.watch(config.watchFor, function (event) {
+        browserify('react-dom/index.js', {state: event.type})
+            .then(function () {
             })
-            .bundle(function (error) {
-                if (!error) return;
-
-                log(error.message, log.FG_RED);
-                if (error.codeFrame) log(error.codeFrame);
-            })
-            .pipe(source(filename + '-bundle.js'))
-            .pipe(gulp.dest('./entry/lib'));
-        log('done', log.FG_GREEN);
+            .catch(function () {
+            });
     });
 });
+
+gulp.task('browserify-react', function () {
+    config = {
+        babelify: {compact: false},
+        browserify: {
+            // standalone: 'react',
+            require: 'react'
+        },
+        bundleDirectory: config.bundleDirectory
+    };
+    browserify({only: config})
+        .then(function () {
+            // config.browserify.standalone = 'react-dom';
+            config.browserify.require = 'react-dom';
+            return browserify({only: config})
+        })
+        .then(function () {
+            log('All Done', log.FG_GREEN)
+        })
+        .catch(function (...args) {
+            console.log(args)
+        });
+});
+

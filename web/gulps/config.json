@@ -1,0 +1,11 @@
+{
+  "watchFor": "react-*/*.js",
+  "requireAliases": {
+    "../react-components": "components"
+  },
+  "babelify": {
+    "presets": ["es2015", "react", "stage-2"]
+  },
+  "externalFiles": ["react", "react-dom"],
+  "bundleDirectory": "../entry/lib"
+}

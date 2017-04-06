@@ -2,7 +2,9 @@
   "scripts": {
     "babel": "babel src -d lib",
     "browserify": "browserify src/index.js -o lib/bundle.js -t [ babelify --presets [ es2015 react ] --only /web/src/ ]",
-    "gulp": "gulp"
+    "gulp": "gulp",
+    "bundle-react": "gulp browserify-react",
+    "a": "browserify -r react-dom > /Users/felix/projects/fk/notes/web/entry/lib/react-dom-bundle.js"
   },
   "devDependencies": {
     "babel-cli": "^6.24.0",
@@ -15,8 +17,11 @@
     "gulp": "^3.9.1",
     "gulp-notify": "^3.0.0",
     "gulp-plumber": "^1.1.0",
+    "json": "^9.0.6",
+    "material-ui": "^0.17.1",
     "react": "^15.4.2",
     "react-dom": "^15.4.2",
+    "react-tap-event-plugin": "^2.0.1",
     "remarkable": "^1.7.1",
     "vinyl-source-stream": "^1.1.0"
   },

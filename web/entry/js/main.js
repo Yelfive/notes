@@ -10,5 +10,5 @@
         console.error('Page of path ' + window.location.pathname + ' not found');
         return false;
     }
-    
+
 })();
