@@ -1,11 +1,38 @@
 {
-  "watchFor": "react-*/*.js",
-  "requireAliases": {
-    "../react-components": "components"
+  "watchFor": [
+    "components/*.js",
+    "lib/*.js",
+    "gulps/config.json"
+  ],
+  "env": "production_",
+  "minify": false,
+  "pages": [
+    "main"
+  ],
+  "overwrite": {
+    "debug": true
   },
   "babelify": {
-    "presets": ["es2015", "react", "stage-2"]
+    "presets": [
+      "es2015",
+      "react",
+      "stage-2"
+    ]
   },
-  "externalFiles": ["react", "react-dom"],
+  "externalFiles": [
+    "react",
+    "react-addons-transition-group",
+    "react/lib/ReactFragment",
+    "react/lib/shallowCompare",
+    "react-dom",
+    "react-dom/lib/EventPluginHub",
+    "react-dom/lib/ReactDefaultInjection",
+    "react-dom/lib/EventPropagators",
+    "react-dom/lib/EventPluginUtils",
+    "react-dom/lib/EventConstants",
+    "react-dom/lib/SyntheticUIEvent",
+    "react-dom/lib/ViewportMetrics"
+  ],
+  "srcDirectory": "lib",
   "bundleDirectory": "../entry/lib"
 }

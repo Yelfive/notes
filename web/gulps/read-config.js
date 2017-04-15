@@ -6,7 +6,11 @@ let fs = require('fs');
 
 function readConfig(configFile) {
     let config = fs.readFileSync(configFile).toString();
-    return JSON.parse(config);
+    try {
+        return JSON.parse(config);
+    } catch (e) {
+        return {};
+    }
 }
 
 module.exports = readConfig;

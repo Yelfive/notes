@@ -6,6 +6,10 @@ let browserify = require('browserify');
 let fs = require('fs');
 let readConfig = require('./read-config');
 let log = require('./log');
+let uglify = require('gulp-uglify');
+let source = require('vinyl-source-stream');
+let buffer = require('vinyl-buffer');
+let gulp = require('gulp');
 
 const getRealPath = function (relativePath) {
     let arr = (0 === relativePath.indexOf('/') ? relativePath : __dirname + '/' + relativePath).split('/');
@@ -70,7 +74,9 @@ const parseAlias = function (src, dst) {
     let stat = fs.lstatSync(src);
     let files;
     if (stat.isFile()) {
-        return [[src, dst]];
+        return [
+            [src, dst]
+        ];
     } else if (stat.isDirectory(src)) {
         files = readDir(src);
         let reg = new RegExp(`^${src}`);
@@ -107,7 +113,7 @@ let gulpBrowserify = function (path, opts) {
         path = null;
     }
 
-    if (typeof opts === 'object') {
+    if (opts && typeof opts === 'object') {
         if (typeof opts.only === 'object') {
             config = opts.only;
         } else if (opts.overwrite === 'object') {
@@ -118,38 +124,54 @@ let gulpBrowserify = function (path, opts) {
 
     validateConfig(config);
 
+
+    process.env.NODE_ENV=config.env;
     let b, filename;
     if (path) {
-        let match = path.match(/([-\w]+)\.js$/);
-        if (!match) log('Oops! File should match *.js: ' + path, log.FG_RED);
+        let match = path.match(/([-\w]+)\.js?$/);
+        if (!match) return log('Oops! File should match *.js: ' + path, log.FG_RED);
+
         filename = match[1];
         b = browserify(path);
         if (config.externalFiles) b.external(config.externalFiles);
     } else {
         b = browserify(config.browserify);
-        filename = config.browserify.require;
+        filename = config.bundleAs || config.browserify.require;
     }
-
-    if (config.requireAliases) parseAliases(b, config.requireAliases);
+    // if (config.requireAliases) parseAliases(b, config.requireAliases);
 
     let bundleDir = getRealPath(config.bundleDirectory);
 
+    let bundledFilename = `${bundleDir}/${filename}-bundle.js`;
     // todo: log(writing file of size xxx kb)
-    console.log(`${bundleDir}/${filename}-bundle.js`);
+    log(`${bundledFilename}`, log.FG_GREEN_DARK);
     return new Promise(function (resolve, reject) {
-        b.transform('babelify', config.babelify)
-            .bundle(function (error) {
-                if (!error) return;
+        b.transform('babelify', config.babelify);
+        let bundle = b.bundle(function (error) {
+            if (!error) return;
 
-                log(error.message, log.FG_RED);
-                if (error.codeFrame) log(error.codeFrame);
-                reject(error);
-            })
-            .pipe(fs.createWriteStream(`${bundleDir}/${filename}-bundle.js`))
-            .on('finish', function () {
-                log('done', log.FG_GREEN);
-                resolve();
-            });
+            log(error.message, log.FG_RED);
+            if (error.codeFrame) log(error.codeFrame);
+            reject(error);
+        });
+
+        if (config.minify) {
+            bundle
+                .pipe(source(`${filename}-bundle.js`))
+                .pipe(buffer())
+                .pipe(uglify())
+                .pipe(gulp.dest('entry/lib'))
+                .on('end', () => {
+                    log('done', log.FG_GREEN);
+                    resolve();
+                });
+        } else {
+            bundle.pipe(fs.createWriteStream(bundledFilename))
+                .on('finish', function () {
+                    log('done', log.FG_GREEN);
+                    resolve();
+                });
+        }
     });
 };
 

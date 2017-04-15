@@ -1,13 +1,15 @@
 /**
  * @author Felix Huang <yelfivehuang@gmail.com>
  */
+
 import React from 'react';
 import TextField from 'material-ui/TextField';
+import RaisedButton from 'material-ui/RaisedButton';
 
 let Form = React.createClass({
     render(){
         return (
-            <form onSubmit={this.props.onSubmit}>
+            <form onSubmit={this.props.onSubmit} style={this.props.style}>
                 {this.props.children}
             </form>
         )
@@ -16,12 +18,26 @@ let Form = React.createClass({
 
 Form.Input = React.createClass({
     getInitialState() {
-        return {value: this.props.default};
+        return {value: this.props.default, error: this.props.error};
     },
     handleChange (e) {
-        this.setState({value: e.target.value});
+        this.setState({
+            value: e.target.value,
+            error: ''
+        });
+    },
+    componentWillReceiveProps() {
+        if (this.props.error) this.setState({error: this.props.error})
     },
     render() {
+        const errorStyle = {
+            transition: 'none',
+            position: 'absolute',
+            bottom: -6
+        };
+        const style = {
+            bottom: 20
+        };
         return (
             <div>
                 <TextField
@@ -32,10 +48,12 @@ Form.Input = React.createClass({
                     onChange={this.handleChange}
                     hintText={this.props.placeholder}
                     floatingLabelText={this.props.placeholder}
-                    errorText={this.props.error}
+                    errorText={this.state.error}
+                    autoComplete="Off"
+                    errorStyle={errorStyle}
+                    style={style}
                 />
             </div>
-
         )
     }
 });
@@ -44,7 +62,11 @@ Form.SubmitButton = React.createClass({
     render() {
         return (
             <div>
-                <input type="submit" value={this.props.value || 'Submit'} name={this.props.name || 'submit'}/>
+                <RaisedButton  type="submit"
+                               label={this.props.label}
+                               primary={true}
+                               fullWidth={true}
+                />
             </div>
         );
     }
