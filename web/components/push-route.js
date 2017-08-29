@@ -6,6 +6,8 @@ import React from 'react';
 
 let historyRegistered = false;
 
+var defaultPage = 'index';
+
 class Route {
     static registerHistory(render) {
         if (historyRegistered) return true;
@@ -26,15 +28,13 @@ class Route {
         history.pushState(data, url, url);
     }
 
-    static defaultPage = 'index';
-
     static currentPage() {
         return this.getPageName(location.pathname);
     }
 
     static getPageName(url) {
         let match = url.match(/^\/([\w-]+)\.html/);
-        return match ? match[1] : this.defaultPage;
+        return match ? match[1] : defaultPage;
     }
 }
 

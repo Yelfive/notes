@@ -15,7 +15,7 @@ let PageIndex = React.createClass({
             <div>
                 <AppBar
                     title="Title"
-                    iconElementRight={<Avatar src="images/avatar.jpeg" style={avatarStyle}/>}
+                    iconElementRight={<Avatar src="" style={avatarStyle}/>}
                 />
             </div>
         )

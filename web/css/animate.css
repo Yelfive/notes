@@ -1,0 +1,31 @@
+.pages>span>div {
+    position: absolute;
+    left: 0;
+    top: 0;
+}
+
+.fade-enter {
+  opacity: 0;
+  z-index: 1;
+  width: 100%;
+}
+
+.fade-enter.fade-enter-active {
+  opacity: 1;
+  transition: opacity 250ms ease-in;
+}
+
+.pages>span {
+    position: relative;
+    display: block;
+}
+
+/* 
+.fade-leave {
+    opacity: 1;
+}
+
+.fade-leave.fade-leave-active {
+    opacity: 0;
+    transition: opacity 250ms ease-out;
+} */

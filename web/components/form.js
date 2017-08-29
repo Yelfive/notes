@@ -9,7 +9,7 @@ import RaisedButton from 'material-ui/RaisedButton';
 let Form = React.createClass({
     render(){
         return (
-            <form onSubmit={this.props.onSubmit} style={this.props.style}>
+            <form onSubmit={this.props.onSubmit} className={this.props.className} style={this.props.style}>
                 {this.props.children}
             </form>
         )
@@ -36,7 +36,8 @@ Form.Input = React.createClass({
             bottom: -6
         };
         const style = {
-            bottom: 20
+            bottom: 20,
+            width: '100%'
         };
         return (
             <div>

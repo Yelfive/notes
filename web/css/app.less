@@ -1,0 +1,30 @@
+
+@duration: 300ms;
+
+.pager-enter {
+    transition: transform @duration ease-out, opacity @duration ease-out;
+    transform: translateX(100px);
+    opacity: 0 
+}
+
+.pager-enter.pager-enter-active {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.pager-leave {
+    transition: transform @duration ease-out, opacity @duration ease-out;
+    transform: translateX(0);
+    opacity: 1;
+}
+
+.pager-leave.pager-leave-active {
+    transform: translateX(100px);
+    opacity: 0;
+}
+
+.pages {
+    position: absolute;
+    left: 0;
+    top: 0;
+}

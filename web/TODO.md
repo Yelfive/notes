@@ -31,20 +31,25 @@ TODO
     - use `Shift + Tab` to outdent to end a <ol> list
 
 BUGS
-===
+----
+
 - tab
+
     tab to indent multiple lines
 - data-wrapper="1/2" should not generate SPs if there is non-empty chars around
-    ```
+
+    ```html
         "ab <span data-wrapper="1/2">abcd</span>"
            ^
          here
     ```
 
 - Punctuation close: press close-punctuation,
+
     - check if there's a close already places after the caret,
     if there is, just move the caret after the close-punctuation
-    ```
+
+    ```txt
     e.g.
 
     'abcdI'
@@ -60,8 +65,10 @@ BUGS
         - in code block but not in comment
 - table
     - press ArrowDown to move caret to the first line of the cell below(CL,RF)
+
         - If the cell is text-node-only and with multiple lines,
           cannot locate the accurate offset where the care should be placed
+
     - delete multiple lines over different cells result in exception
     - cannot use Arrow(Up/Down) to move caret from cell line of table inside to that of table outside
         |   title   |     title    |
